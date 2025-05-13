@@ -1,17 +1,21 @@
 package com.mikulex.tagpile.view
 
 import com.mikulex.tagpile.model.dto.FileDTO
+import com.mikulex.tagpile.viewmodel.ImageViewerViewModel
 import com.mikulex.tagpile.viewmodel.SearchStateViewModel
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener
 import javafx.collections.ObservableList
+import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.ListView
 import javafx.scene.control.TextField
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
 import javafx.stage.FileChooser
+import javafx.stage.Stage
 import javafx.util.Builder
 
 class DashboardBuilder(searchStateModel: SearchStateViewModel) : Builder<Region> {
@@ -75,8 +79,17 @@ class DashboardBuilder(searchStateModel: SearchStateViewModel) : Builder<Region>
     }
 
     private fun createImageTile(file: FileDTO) = ImageView().apply {
-        image = Image(file.url?.toUri().toString(), 150.0, 150.0, true, true)
-        isPreserveRatio = true
-        userData = file
+        this.image = Image(file.url?.toUri().toString(), 150.0, 150.0, true, true)
+        this.isPreserveRatio = true
+        this.userData = file
+        this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
+            if (event.clickCount == 2) {
+                with(Stage()) {
+                    val imageViewModel = ImageViewerViewModel().apply { mediaFile.set(file) }
+                    this.scene = Scene(ImageViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
+                    this.show()
+                }
+            }
+        }
     }
 }
