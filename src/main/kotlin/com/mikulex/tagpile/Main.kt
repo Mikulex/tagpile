@@ -1,8 +1,9 @@
 package com.mikulex.tagpile
 
 import com.mikulex.tagpile.model.MediaModel
-import com.mikulex.tagpile.sources.DatabaseImageSource
+import com.mikulex.tagpile.sources.DatabaseMediaSource
 import com.mikulex.tagpile.view.DashboardBuilder
+import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import com.mikulex.tagpile.viewmodel.SearchStateViewModel
 import javafx.application.Application
 import javafx.scene.Scene
@@ -28,14 +29,14 @@ class Main : Application() {
 
     override fun init() {
         LOG.debug("Starting init thread")
-        val source = DatabaseImageSource()
+        val source = DatabaseMediaSource()
         source.initDatabase()
         mediaModel = MediaModel(source)
     }
 
     private fun createMainScene(): Scene {
         val viewModel = SearchStateViewModel(mediaModel!!)
-        val dashboardBuilder = DashboardBuilder(viewModel)
+        val dashboardBuilder = DashboardBuilder(viewModel, MediaViewModelFactory(mediaModel!!))
         val rootNode = dashboardBuilder.build()
         return Scene(rootNode, WINDOW_WIDTH, WINDOW_HEIGHT)
     }

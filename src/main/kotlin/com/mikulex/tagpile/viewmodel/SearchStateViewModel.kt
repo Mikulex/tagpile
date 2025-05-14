@@ -1,7 +1,7 @@
 package com.mikulex.tagpile.viewmodel
 
 import com.mikulex.tagpile.model.MediaModel
-import com.mikulex.tagpile.model.dto.FileDTO
+import com.mikulex.tagpile.model.dto.MediaDTO
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
@@ -10,7 +10,7 @@ import java.io.File
 
 class SearchStateViewModel(private val mediaModel: MediaModel) {
     val query: StringProperty = SimpleStringProperty()
-    val results: ObservableList<FileDTO> = FXCollections.observableArrayList()
+    val results: ObservableList<MediaDTO> = FXCollections.observableArrayList()
 
     fun importFile(file: File) {
         mediaModel.importFile(file.toURI().toString())

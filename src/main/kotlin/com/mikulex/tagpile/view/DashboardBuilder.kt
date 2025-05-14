@@ -1,7 +1,7 @@
 package com.mikulex.tagpile.view
 
-import com.mikulex.tagpile.model.dto.FileDTO
-import com.mikulex.tagpile.viewmodel.ImageViewerViewModel
+import com.mikulex.tagpile.model.dto.MediaDTO
+import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import com.mikulex.tagpile.viewmodel.SearchStateViewModel
 import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener
@@ -18,8 +18,10 @@ import javafx.stage.FileChooser
 import javafx.stage.Stage
 import javafx.util.Builder
 
-class DashboardBuilder(searchStateModel: SearchStateViewModel) : Builder<Region> {
-    private val model = searchStateModel
+class DashboardBuilder(
+    private val searchStateModel: SearchStateViewModel,
+    private val mediaViewModelFactory: MediaViewModelFactory
+) : Builder<Region> {
 
     override fun build(): Region? {
         return BorderPane().apply {
@@ -34,7 +36,7 @@ class DashboardBuilder(searchStateModel: SearchStateViewModel) : Builder<Region>
         prefColumns = 4
         hgap = 10.0
         vgap = 10.0
-        model.results.addListener(ListChangeListener { change ->
+        searchStateModel.results.addListener(ListChangeListener { change ->
             while (change.next()) {
                 if (change.wasAdded()) {
                     children += change.addedSubList.map { file -> createImageTile(file) }
@@ -55,22 +57,22 @@ class DashboardBuilder(searchStateModel: SearchStateViewModel) : Builder<Region>
         children += Button("Open").apply {
             setOnAction {
                 fileChooser.showOpenDialog(this.scene.window)
-                    ?.let(model::importFile)
+                    ?.let(searchStateModel::importFile)
             }
         }
         children += TextField().apply {
-            this.textProperty().bindBidirectional(model.query)
+            this.textProperty().bindBidirectional(searchStateModel.query)
             this.promptText = "Search"
             this.setOnAction {
-                model.query.bindBidirectional(this.textProperty())
-                model.findMedias()
+                searchStateModel.query.bindBidirectional(this.textProperty())
+                searchStateModel.findMedias()
             }
         }
     }
 
     private fun buildSideBar(): VBox {
         val tags: ObservableList<String> = FXCollections.observableArrayList()
-        model.query.addListener { observable -> tags.setAll(model.query.get().split(" ")) }
+        searchStateModel.query.addListener { observable -> tags.setAll(searchStateModel.query.get().split(" ")) }
         val listView: ListView<String> = ListView(tags)
         return VBox().apply {
             children.add(listView)
@@ -78,14 +80,17 @@ class DashboardBuilder(searchStateModel: SearchStateViewModel) : Builder<Region>
         }
     }
 
-    private fun createImageTile(file: FileDTO) = ImageView().apply {
+    private fun createImageTile(file: MediaDTO) = ImageView().apply {
         this.image = Image(file.url?.toUri().toString(), 150.0, 150.0, true, true)
         this.isPreserveRatio = true
         this.userData = file
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
             if (event.clickCount == 2) {
                 with(Stage()) {
-                    val imageViewModel = ImageViewerViewModel().apply { mediaFile.set(file) }
+                    val imageViewModel = mediaViewModelFactory.create().apply {
+                        mediaFile.set(file)
+                        this.findTags(file.pk)
+                    }
                     this.scene = Scene(ImageViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
                     this.show()
                 }

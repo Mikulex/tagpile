@@ -1,6 +1,6 @@
 package com.mikulex.tagpile.sources
 
-import com.mikulex.tagpile.model.dto.FileDTO
+import com.mikulex.tagpile.model.dto.MediaDTO
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.net.URI
@@ -8,9 +8,9 @@ import java.nio.file.Path
 import java.sql.Connection
 import java.sql.DriverManager
 
-class DatabaseImageSource() : ImageSource {
+class DatabaseMediaSource() : MediaSource {
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(DatabaseImageSource::class.java)
+        private val log: Logger = LoggerFactory.getLogger(DatabaseMediaSource::class.java)
 
         private val CREATE_MEDIA_TABLE = """
             CREATE TABLE IF NOT EXISTS media (
@@ -42,6 +42,12 @@ class DatabaseImageSource() : ImageSource {
             JOIN tags ON rel.source = tags.pk
             WHERE tags.code in (%s)
             """.trimIndent()
+        private val FIND_TAGS_FOR_MEDIA = """
+            SELECT tags.code FROM media
+            JOIN tag_media_rel AS rel ON rel.target = media.pk
+            JOIN tags ON rel.source = tags.pk
+            WHERE media.pk = ?
+        """.trimIndent()
     }
 
     private val connection: Connection = DriverManager.getConnection("jdbc:sqlite:database.db")
@@ -53,7 +59,7 @@ class DatabaseImageSource() : ImageSource {
         connection.prepareStatement(CREATE_TAG_MEDIA_REL_TABLE).execute()
     }
 
-    override fun findMedias(query: String?): List<FileDTO> {
+    override fun findMedias(query: String?): List<MediaDTO> {
         log.debug("finding medias for query $query")
         val statement = if (query == null || query.isEmpty()) {
             connection.prepareStatement(FIND_ALL_MEDIAS)
@@ -66,12 +72,12 @@ class DatabaseImageSource() : ImageSource {
                 }
             }
         }
-        val set = statement.executeQuery()
-        val list = mutableListOf<FileDTO>()
-        while (set.next()) {
-            FileDTO().apply {
-                url = Path.of(URI.create(set.getString("path")))
-                importDate = set.getDate("importDate")
+        val res = statement.executeQuery()
+        val list = mutableListOf<MediaDTO>()
+        while (res.next()) {
+            MediaDTO(res.getInt("pk")).apply {
+                url = Path.of(URI.create(res.getString("path")))
+                importDate = res.getDate("importDate")
                 list.add(this)
             }
         }
@@ -89,5 +95,16 @@ class DatabaseImageSource() : ImageSource {
         statement.executeUpdate()
     }
 
-
+    override fun findTagsForMedia(pk: Int): List<String> {
+        val statement = connection.prepareStatement(FIND_TAGS_FOR_MEDIA)
+        val res = statement.run {
+            statement.setInt(1, pk)
+            statement.executeQuery()
+        }
+        return buildList {
+            while (res.next()) {
+                add(res.getString("code"))
+            }
+        }
+    }
 }
