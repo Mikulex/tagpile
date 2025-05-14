@@ -54,7 +54,7 @@ class DashboardBuilder(
         val fileChooser = FileChooser().apply {
             title = "Open File"
         }
-        children += Button("Open").apply {
+        children += Button("Import Image").apply {
             setOnAction {
                 fileChooser.showOpenDialog(this.scene.window)
                     ?.let(searchStateModel::importFile)
