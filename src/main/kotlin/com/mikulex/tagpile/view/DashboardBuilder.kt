@@ -3,9 +3,7 @@ package com.mikulex.tagpile.view
 import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import com.mikulex.tagpile.viewmodel.SearchStateViewModel
-import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener
-import javafx.collections.ObservableList
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.ListView
@@ -48,7 +46,7 @@ class DashboardBuilder(
                 }
             }
         })
-        searchStateModel.query.set("")
+        searchStateModel.searchQuery.set("")
         searchStateModel.findMedias()
     }
 
@@ -63,19 +61,17 @@ class DashboardBuilder(
             }
         }
         children += TextField().apply {
-            this.textProperty().bindBidirectional(searchStateModel.query)
+            this.textProperty().bindBidirectional(searchStateModel.searchQuery)
             this.promptText = "Search"
             this.setOnAction {
-                searchStateModel.query.bindBidirectional(this.textProperty())
+                searchStateModel.searchQuery.bindBidirectional(this.textProperty())
                 searchStateModel.findMedias()
             }
         }
     }
 
     private fun buildSideBar(): VBox {
-        val tags: ObservableList<String> = FXCollections.observableArrayList()
-        searchStateModel.query.addListener { observable -> tags.setAll(searchStateModel.query.get().split(" ")) }
-        val listView: ListView<String> = ListView(tags)
+        val listView: ListView<String> = ListView(searchStateModel.resultTags)
         return VBox().apply {
             children.add(listView)
             prefWidth = 100.0

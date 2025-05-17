@@ -19,7 +19,8 @@ class DatabaseMediaSource() : MediaSource {
             CREATE TABLE IF NOT EXISTS $MEDIA (
             pk INTEGER PRIMARY KEY AUTOINCREMENT,
             path STRING,
-            importDate DATE
+            importDate DATE,
+            UNIQUE(path)
             )
         """.trimIndent()
 
@@ -40,13 +41,18 @@ class DatabaseMediaSource() : MediaSource {
             UNIQUE(source, target)
             )
         """.trimIndent()
-        private val FIND_ALL_MEDIAS =
-            "SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate FROM $MEDIA"
+        private val FIND_ALL_MEDIAS = """
+            SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate, group_concat($TAGS.code) as tag_list FROM $MEDIA
+            LEFT OUTER JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
+            LEFT OUTER JOIN $TAGS ON rel.source = $TAGS.pk
+            GROUP BY $MEDIA.pk
+            """.trimMargin()
         private val FIND_MEDIA_WITH_TAGS = """
-            SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate FROM $MEDIA
-            JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
-            JOIN $TAGS ON rel.source = $TAGS.pk
-            WHERE $TAGS.code in (%s)
+            SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate, group_concat($TAGS.code) as tag_list FROM $MEDIA
+            LEFT OUTER JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
+            LEFT OUTER JOIN $TAGS ON rel.source = $TAGS.pk
+            GROUP BY $MEDIA.pk
+            HAVING $TAGS.code in (%s)
             """.trimIndent()
         private val FIND_TAGS_FOR_MEDIA = """
             SELECT $TAGS.code FROM $MEDIA
@@ -54,6 +60,11 @@ class DatabaseMediaSource() : MediaSource {
             JOIN $TAGS ON rel.source = $TAGS.pk
             WHERE $MEDIA.pk = ?
         """.trimIndent()
+
+        private val ADD_MEDIA_TAG_REL = "INSERT OR IGNORE INTO $TAG_MEDIA_REL(source, target) VALUES (?, ?)"
+        private val INSERT_TAG = "INSERT OR IGNORE INTO $TAGS (code) VALUES (?)"
+        private val GET_TAG_PK = "SELECT pk FROM $TAGS WHERE code = ?"
+        private val INSERT_INTO_MEDIA = "INSERT INTO $MEDIA (path, importDate) VALUES (?, CURRENT_TIMESTAMP)"
     }
 
     private val connection: Connection = DriverManager.getConnection("jdbc:sqlite:database.db")
@@ -79,26 +90,25 @@ class DatabaseMediaSource() : MediaSource {
             }
         }
         val res = statement.executeQuery()
-        val list = mutableListOf<MediaDTO>()
+        val medias = mutableListOf<MediaDTO>()
         while (res.next()) {
             MediaDTO(res.getInt("pk")).apply {
                 url = Path.of(URI.create(res.getString("path")))
                 importDate = res.getDate("importDate")
-                list.add(this)
+                tags = res.getString("tag_list")?.split(",")
+                medias.add(this)
             }
         }
-        return list
+        return medias
     }
 
     override fun importFile(filePath: String) {
-        val statement = connection.prepareStatement(
-            """
-            INSERT INTO media (path, importDate) 
-            VALUES (?, CURRENT_TIMESTAMP)
-        """.trimIndent()
-        )
-        statement.setString(1, filePath)
-        statement.executeUpdate()
+        connection.prepareStatement(
+            INSERT_INTO_MEDIA
+        ).run {
+            setString(1, filePath)
+            executeUpdate()
+        }
     }
 
     override fun findTagsForMedia(pk: Int): List<String> {
@@ -118,19 +128,13 @@ class DatabaseMediaSource() : MediaSource {
         try {
             connection.autoCommit = false
 
-            connection.prepareStatement(
-                """INSERT OR IGNORE INTO $TAGS (code)
-            VALUES (?)
-        """.trimIndent()
-            ).apply {
+            connection.prepareStatement(INSERT_TAG).apply {
                 setString(1, tag)
                 executeUpdate()
             }
 
             val tagPK = connection.prepareStatement(
-                """
-            SELECT pk FROM $TAGS WHERE code = ?
-        """.trimIndent()
+                GET_TAG_PK.trimIndent()
             ).run {
                 setString(1, tag)
                 executeQuery()
@@ -139,12 +143,7 @@ class DatabaseMediaSource() : MediaSource {
                 getInt("pk")
             }
 
-            connection.prepareStatement(
-                """
-            INSERT OR IGNORE INTO $TAG_MEDIA_REL(source, target) 
-            VALUES (?, ?)
-        """.trimIndent()
-            ).run {
+            connection.prepareStatement(ADD_MEDIA_TAG_REL).run {
                 setInt(1, tagPK)
                 setInt(2, mediaPK)
                 executeUpdate()

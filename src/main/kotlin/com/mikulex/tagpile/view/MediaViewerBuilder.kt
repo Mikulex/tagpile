@@ -19,14 +19,10 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
         return BorderPane().apply {
             center = createImageTile(model.mediaFile.get())
             left = VBox().apply {
-                children += ListView(model.tags).apply {
-                    isEditable = true
-                }
+                children += ListView(model.tags).apply { isEditable = true }
 
                 children += Button("Add Tag").apply {
-                    onAction = EventHandler { event ->
-                        openTagDialog()
-                    }
+                    onAction = EventHandler { _ -> openTagDialog() }
                 }
             }
         }
