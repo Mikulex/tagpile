@@ -48,6 +48,8 @@ class DashboardBuilder(
                 }
             }
         })
+        searchStateModel.query.set("")
+        searchStateModel.findMedias()
     }
 
     private fun buildHeader(): HBox = HBox().apply {
