@@ -93,7 +93,7 @@ class DashboardBuilder(
                         mediaFile.set(file)
                         this.findTags(file.pk)
                     }
-                    this.scene = Scene(ImageViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
+                    this.scene = Scene(MediaViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
                     this.show()
                 }
             }

@@ -17,4 +17,8 @@ class MediaModel(private val source: MediaSource) : IMediaModel {
         return source.findTagsForMedia(pk)
     }
 
+    override fun addTagToMedia(pk: Int, code: String): Boolean {
+        return source.addTag(pk, code)
+    }
+
 }

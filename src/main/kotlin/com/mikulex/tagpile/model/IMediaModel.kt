@@ -6,4 +6,5 @@ interface IMediaModel {
     fun findMedias(query: String?): List<MediaDTO>
     fun importFile(filePath: String)
     fun findTagsForMedia(pk: Int): List<String>
+    fun addTagToMedia(media: Int, tag: String): Boolean
 }

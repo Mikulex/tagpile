@@ -11,9 +11,12 @@ import java.sql.DriverManager
 class DatabaseMediaSource() : MediaSource {
     companion object {
         private val log: Logger = LoggerFactory.getLogger(DatabaseMediaSource::class.java)
+        private val MEDIA = "media"
+        private val TAGS = "tags"
+        private val TAG_MEDIA_REL = "tag_media_rel"
 
         private val CREATE_MEDIA_TABLE = """
-            CREATE TABLE IF NOT EXISTS media (
+            CREATE TABLE IF NOT EXISTS $MEDIA (
             pk INTEGER PRIMARY KEY AUTOINCREMENT,
             path STRING,
             importDate DATE
@@ -21,32 +24,35 @@ class DatabaseMediaSource() : MediaSource {
         """.trimIndent()
 
         private val CREATE_TAGS_TABLE = """
-            CREATE TABLE IF NOT EXISTS tags (
+            CREATE TABLE IF NOT EXISTS $TAGS (
             pk INTEGER PRIMARY KEY AUTOINCREMENT,
-            code STRING
+            code STRING,
+            UNIQUE(code)
             )
         """.trimIndent()
 
         private val CREATE_TAG_MEDIA_REL_TABLE = """
-            CREATE TABLE IF NOT EXISTS tag_media_rel (
+            CREATE TABLE IF NOT EXISTS $TAG_MEDIA_REL (
             source INTEGER,
             target INTEGER,
-            FOREIGN KEY(source) REFERENCES tags(pk),
-            FOREIGN KEY(target) REFERENCES media(pk)
+            FOREIGN KEY(source) REFERENCES $TAGS(pk),
+            FOREIGN KEY(target) REFERENCES $MEDIA(pk),
+            UNIQUE(source, target)
             )
         """.trimIndent()
-        private val FIND_ALL_MEDIAS = "SELECT media.pk, media.path, media.importDate FROM media"
+        private val FIND_ALL_MEDIAS =
+            "SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate FROM $MEDIA"
         private val FIND_MEDIA_WITH_TAGS = """
-            SELECT media.pk, media.path, media.importDate FROM media
-            JOIN tag_media_rel AS rel ON rel.target = media.pk
-            JOIN tags ON rel.source = tags.pk
-            WHERE tags.code in (%s)
+            SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate FROM $MEDIA
+            JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
+            JOIN $TAGS ON rel.source = $TAGS.pk
+            WHERE $TAGS.code in (%s)
             """.trimIndent()
         private val FIND_TAGS_FOR_MEDIA = """
-            SELECT tags.code FROM media
-            JOIN tag_media_rel AS rel ON rel.target = media.pk
-            JOIN tags ON rel.source = tags.pk
-            WHERE media.pk = ?
+            SELECT $TAGS.code FROM $MEDIA
+            JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
+            JOIN $TAGS ON rel.source = $TAGS.pk
+            WHERE $MEDIA.pk = ?
         """.trimIndent()
     }
 
@@ -105,6 +111,53 @@ class DatabaseMediaSource() : MediaSource {
             while (res.next()) {
                 add(res.getString("code"))
             }
+        }
+    }
+
+    override fun addTag(mediaPK: Int, tag: String): Boolean {
+        try {
+            connection.autoCommit = false
+
+            connection.prepareStatement(
+                """INSERT OR IGNORE INTO $TAGS (code)
+            VALUES (?)
+        """.trimIndent()
+            ).apply {
+                setString(1, tag)
+                executeUpdate()
+            }
+
+            val tagPK = connection.prepareStatement(
+                """
+            SELECT pk FROM $TAGS WHERE code = ?
+        """.trimIndent()
+            ).run {
+                setString(1, tag)
+                executeQuery()
+            }.run {
+                next()
+                getInt("pk")
+            }
+
+            connection.prepareStatement(
+                """
+            INSERT OR IGNORE INTO $TAG_MEDIA_REL(source, target) 
+            VALUES (?, ?)
+        """.trimIndent()
+            ).run {
+                setInt(1, tagPK)
+                setInt(2, mediaPK)
+                executeUpdate()
+            }
+            connection.commit()
+            connection.autoCommit = true
+            return true
+        } catch (e: Exception) {
+            log.warn("Failed to add tag for media $mediaPK with tag $tag", e)
+            connection.rollback()
+            return false
+        } finally {
+            connection.autoCommit = true
         }
     }
 }
