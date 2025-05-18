@@ -8,10 +8,14 @@ import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.ListView
 import javafx.scene.control.TextField
+import javafx.scene.effect.Blend
+import javafx.scene.effect.BlendMode
+import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.*
+import javafx.scene.paint.Color
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import javafx.util.Builder
@@ -25,24 +29,56 @@ class DashboardBuilder(
         return BorderPane().apply {
             center = buildCenter()
             top = buildHeader()
-            left = buildSideBar()
-            right = VBox()
+            left = buildTagBar()
+            right = buildMetaDataBar()
         }
     }
 
+    private fun buildMetaDataBar() = VBox().apply {
+        val previewImageView = ImageView().apply {
+            isPreserveRatio = true
+            fitWidth = 300.0
+        }
+
+        children += previewImageView
+
+        searchStateModel.selectedMedias.addListener(ListChangeListener { change ->
+            println(change)
+            while (change.next()) {
+                if (searchStateModel.selectedMedias.size == 1) {
+                    searchStateModel.selectedMedias.first()?.url?.toUri()?.let {
+                        previewImageView.image = Image(
+                            it.toString(),
+                            500.0, 500.0, true, true
+                        )
+                        previewImageView.isVisible = true
+                    } ?: let {
+                        previewImageView.image = null
+                        previewImageView.isVisible = false
+                    }
+                } else {
+                    previewImageView.image = null
+                    previewImageView.isVisible = false
+                }
+            }
+        })
+    }
+
     private fun buildCenter() = TilePane().apply {
-        prefColumns = 4
+        prefColumns = 8
         hgap = 10.0
         vgap = 10.0
+
         searchStateModel.results.addListener(ListChangeListener { change ->
             while (change.next()) {
-                if (change.wasAdded()) {
-                    children += change.addedSubList.map { file -> createImageTile(file) }
-                }
                 if (change.wasRemoved()) {
                     change.removed.forEach { r ->
                         children.removeIf { it.userData == r }
                     }
+                }
+
+                if (change.wasAdded()) {
+                    children += change.addedSubList.map { file -> createDashboardTile(file) }
                 }
             }
         })
@@ -69,7 +105,7 @@ class DashboardBuilder(
         }
     }
 
-    private fun buildSideBar(): VBox {
+    private fun buildTagBar(): VBox {
         val listView: ListView<String> = ListView(searchStateModel.resultTags)
         return VBox().apply {
             children.add(listView)
@@ -77,16 +113,33 @@ class DashboardBuilder(
         }
     }
 
-    private fun createImageTile(file: MediaDTO) = ImageView().apply {
-        this.image = Image(file.url?.toUri().toString(), 150.0, 150.0, true, true)
+    private fun createDashboardTile(media: MediaDTO) = ImageView().apply {
+        this.image = Image(media.url?.toUri().toString(), 150.0, 0.0, true, true)
         this.isPreserveRatio = true
-        this.userData = file
+        this.userData = media
+
+        searchStateModel.selectedMedias.addListener(ListChangeListener { change ->
+            while (change.next()) {
+                if (change.wasRemoved() && change.removed.contains(media)) {
+                    effect = null
+                }
+                if (change.wasAdded() && change.addedSubList.contains(media)) {
+                    effect = Blend().apply {
+                        mode = BlendMode.MULTIPLY
+                        bottomInput = ColorInput(0.0, 0.0, image.width, image.height, Color.rgb(125, 125, 255))
+                    }
+                }
+            }
+        })
+
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
+            searchStateModel.selectedMedias.setAll(listOf(media))
+
             if (event.clickCount == 2) {
                 with(Stage()) {
                     val imageViewModel = mediaViewModelFactory.create().apply {
-                        mediaFile.set(file)
-                        this.findTags(file.pk)
+                        mediaFile.set(media)
+                        this.findTags(media.pk)
                     }
                     this.scene = Scene(MediaViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
                     this.show()

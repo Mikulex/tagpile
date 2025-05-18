@@ -12,6 +12,7 @@ class SearchStateViewModel(private val mediaModel: MediaModel) {
     val searchQuery: StringProperty = SimpleStringProperty()
     val results: ObservableList<MediaDTO> = FXCollections.observableArrayList()
     val resultTags: ObservableList<String> = FXCollections.observableArrayList()
+    val selectedMedias: ObservableList<MediaDTO> = FXCollections.observableArrayList()
 
     fun importFile(file: File) {
         mediaModel.importFile(file.toURI().toString())
