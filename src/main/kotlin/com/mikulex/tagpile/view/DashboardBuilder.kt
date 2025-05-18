@@ -64,7 +64,6 @@ class DashboardBuilder(
             this.textProperty().bindBidirectional(searchStateModel.searchQuery)
             this.promptText = "Search"
             this.setOnAction {
-                searchStateModel.searchQuery.bindBidirectional(this.textProperty())
                 searchStateModel.findMedias()
             }
         }
