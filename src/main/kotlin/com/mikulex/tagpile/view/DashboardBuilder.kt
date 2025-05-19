@@ -43,7 +43,6 @@ class DashboardBuilder(
         children += previewImageView
 
         searchStateModel.selectedMedias.addListener(ListChangeListener { change ->
-            println(change)
             while (change.next()) {
                 if (searchStateModel.selectedMedias.size == 1) {
                     searchStateModel.selectedMedias.firstOrNull()?.url?.toUri()?.let {
@@ -84,6 +83,10 @@ class DashboardBuilder(
         })
         searchStateModel.searchQuery.set("")
         searchStateModel.findMedias()
+
+        addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
+            searchStateModel.selectedMedias.setAll(emptyList())
+        }
     }
 
     private fun buildHeader(): HBox = HBox().apply {
@@ -134,7 +137,7 @@ class DashboardBuilder(
 
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
             searchStateModel.selectedMedias.setAll(listOf(media))
-
+            event.consume()
             if (event.clickCount == 2) {
                 with(Stage()) {
                     val imageViewModel = mediaViewModelFactory.create().apply {
