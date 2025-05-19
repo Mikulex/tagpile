@@ -46,7 +46,7 @@ class DashboardBuilder(
             println(change)
             while (change.next()) {
                 if (searchStateModel.selectedMedias.size == 1) {
-                    searchStateModel.selectedMedias.first()?.url?.toUri()?.let {
+                    searchStateModel.selectedMedias.firstOrNull()?.url?.toUri()?.let {
                         previewImageView.image = Image(
                             it.toString(),
                             500.0, 500.0, true, true
