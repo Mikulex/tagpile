@@ -8,14 +8,14 @@ import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import java.io.File
 
-class SearchStateViewModel(private val mediaModel: MediaModel) {
+class DashBoardViewModel(private val mediaModel: MediaModel) {
     val searchQuery: StringProperty = SimpleStringProperty()
     val results: ObservableList<MediaDTO> = FXCollections.observableArrayList()
     val resultTags: ObservableList<String> = FXCollections.observableArrayList()
     val selectedMedias: ObservableList<MediaDTO> = FXCollections.observableArrayList()
 
-    fun importFile(file: File) {
-        mediaModel.importFile(file.toURI().toString())
+    fun importFiles(file: List<File>) {
+        file.map { it.toURI().toString() }.forEach { it -> mediaModel.importFile(it) }
     }
 
     fun findMedias() {

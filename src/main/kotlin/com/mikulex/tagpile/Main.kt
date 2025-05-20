@@ -3,8 +3,8 @@ package com.mikulex.tagpile
 import com.mikulex.tagpile.model.MediaModel
 import com.mikulex.tagpile.sources.DatabaseMediaSource
 import com.mikulex.tagpile.view.DashboardBuilder
+import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
-import com.mikulex.tagpile.viewmodel.SearchStateViewModel
 import javafx.application.Application
 import javafx.scene.Scene
 import javafx.stage.Stage
@@ -35,7 +35,7 @@ class Main : Application() {
     }
 
     private fun createMainScene(): Scene {
-        val viewModel = SearchStateViewModel(mediaModel!!)
+        val viewModel = DashBoardViewModel(mediaModel!!)
         val dashboardBuilder = DashboardBuilder(viewModel, MediaViewModelFactory(mediaModel!!))
         val rootNode = dashboardBuilder.build()
         return Scene(rootNode, WINDOW_WIDTH, WINDOW_HEIGHT)

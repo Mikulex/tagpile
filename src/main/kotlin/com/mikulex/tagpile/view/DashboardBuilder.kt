@@ -1,8 +1,8 @@
 package com.mikulex.tagpile.view
 
 import com.mikulex.tagpile.model.dto.MediaDTO
+import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
-import com.mikulex.tagpile.viewmodel.SearchStateViewModel
 import javafx.collections.ListChangeListener
 import javafx.scene.Scene
 import javafx.scene.control.Button
@@ -14,20 +14,23 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.MouseEvent
+import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
 import javafx.scene.paint.Color
+import javafx.scene.shape.Rectangle
+import javafx.scene.text.Text
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import javafx.util.Builder
 
 class DashboardBuilder(
-    private val searchStateModel: SearchStateViewModel,
+    private val dashboardViewModel: DashBoardViewModel,
     private val mediaViewModelFactory: MediaViewModelFactory
 ) : Builder<Region> {
 
     override fun build(): Region? {
         return BorderPane().apply {
-            center = buildCenter()
+            center = buildImageTiles()
             top = buildHeader()
             left = buildTagBar()
             right = buildMetaDataBar()
@@ -42,10 +45,10 @@ class DashboardBuilder(
 
         children += previewImageView
 
-        searchStateModel.selectedMedias.addListener(ListChangeListener { change ->
+        dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {
-                if (searchStateModel.selectedMedias.size == 1) {
-                    searchStateModel.selectedMedias.firstOrNull()?.url?.toUri()?.let {
+                if (dashboardViewModel.selectedMedias.size == 1) {
+                    dashboardViewModel.selectedMedias.firstOrNull()?.url?.toUri()?.let {
                         previewImageView.image = Image(
                             it.toString(),
                             500.0, 500.0, true, true
@@ -63,53 +66,94 @@ class DashboardBuilder(
         })
     }
 
-    private fun buildCenter() = TilePane().apply {
-        prefColumns = 8
-        hgap = 10.0
-        vgap = 10.0
+    private fun buildImageTiles() = StackPane().also { stack ->
+        TilePane().apply {
+            prefColumns = 8
+            hgap = 10.0
+            vgap = 10.0
 
-        searchStateModel.results.addListener(ListChangeListener { change ->
-            while (change.next()) {
-                if (change.wasRemoved()) {
-                    change.removed.forEach { r ->
-                        children.removeIf { it.userData == r }
+            dashboardViewModel.results.addListener(ListChangeListener { change ->
+                while (change.next()) {
+                    if (change.wasRemoved()) {
+                        change.removed.forEach { r ->
+                            children.removeIf { it.userData == r }
+                        }
+                    }
+
+                    if (change.wasAdded()) {
+                        children += change.addedSubList.map { file -> createDashboardTile(file) }
                     }
                 }
+            })
+            dashboardViewModel.searchQuery.set("")
+            dashboardViewModel.findMedias()
 
-                if (change.wasAdded()) {
-                    children += change.addedSubList.map { file -> createDashboardTile(file) }
-                }
+            setOnMouseClicked { event ->
+                dashboardViewModel.selectedMedias.setAll(emptyList())
             }
-        })
-        searchStateModel.searchQuery.set("")
-        searchStateModel.findMedias()
 
-        addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
-            searchStateModel.selectedMedias.setAll(emptyList())
+            stack.children += this
         }
+
+        val importOverlay = StackPane().apply {
+            children += Rectangle().apply {
+                fill = Color.LIGHTBLUE.deriveColor(0.0, 1.0, 1.0, 0.8)
+                stroke = Color.LIGHTBLUE
+            }.also { rect ->
+                rect.widthProperty().bind(stack.widthProperty().subtract(100))
+                rect.heightProperty().bind(stack.heightProperty().subtract(100))
+            }
+            children += Text("Drag to import images")
+            stack.children += this
+            isVisible = false
+        }
+
+        stack.setOnDragEntered { event ->
+            importOverlay.isVisible = true
+            event.consume()
+        }
+
+        stack.setOnDragOver { event ->
+            if (event.dragboard.hasFiles()) {
+                event.acceptTransferModes(TransferMode.LINK)
+            }
+            event.consume()
+        }
+
+        stack.setOnDragDropped { event ->
+            dashboardViewModel.importFiles(event.dragboard.files)
+            dashboardViewModel.findMedias()
+        }
+
+        stack.setOnDragExited { event ->
+            importOverlay.isVisible = false
+            event.consume()
+        }
+
     }
 
     private fun buildHeader(): HBox = HBox().apply {
         val fileChooser = FileChooser().apply {
             title = "Open File"
+            extensionFilters.setAll(FileChooser.ExtensionFilter("image", "jpg", "jpeg", "png", "gif"))
         }
         children += Button("Import Image").apply {
             setOnAction {
-                fileChooser.showOpenDialog(this.scene.window)
-                    ?.let(searchStateModel::importFile)
+                fileChooser.showOpenMultipleDialog(this.scene.window)
+                    ?.let(dashboardViewModel::importFiles)
             }
         }
         children += TextField().apply {
-            this.textProperty().bindBidirectional(searchStateModel.searchQuery)
+            this.textProperty().bindBidirectional(dashboardViewModel.searchQuery)
             this.promptText = "Search"
             this.setOnAction {
-                searchStateModel.findMedias()
+                dashboardViewModel.findMedias()
             }
         }
     }
 
     private fun buildTagBar(): VBox {
-        val listView: ListView<String> = ListView(searchStateModel.resultTags)
+        val listView: ListView<String> = ListView(dashboardViewModel.resultTags)
         return VBox().apply {
             children.add(listView)
             prefWidth = 100.0
@@ -121,7 +165,7 @@ class DashboardBuilder(
         this.isPreserveRatio = true
         this.userData = media
 
-        searchStateModel.selectedMedias.addListener(ListChangeListener { change ->
+        dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {
                 if (change.wasRemoved() && change.removed.contains(media)) {
                     effect = null
@@ -136,7 +180,7 @@ class DashboardBuilder(
         })
 
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
-            searchStateModel.selectedMedias.setAll(listOf(media))
+            dashboardViewModel.selectedMedias.setAll(listOf(media))
             event.consume()
             if (event.clickCount == 2) {
                 with(Stage()) {
