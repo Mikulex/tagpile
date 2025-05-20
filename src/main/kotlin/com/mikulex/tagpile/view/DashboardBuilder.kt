@@ -135,12 +135,15 @@ class DashboardBuilder(
     private fun buildHeader(): HBox = HBox().apply {
         val fileChooser = FileChooser().apply {
             title = "Open File"
-            extensionFilters.setAll(FileChooser.ExtensionFilter("image", "jpg", "jpeg", "png", "gif"))
+            extensionFilters.setAll(FileChooser.ExtensionFilter("images", "*.jpg", "*.jpeg", "*.png", "*.gif"))
         }
         children += Button("Import Image").apply {
             setOnAction {
                 fileChooser.showOpenMultipleDialog(this.scene.window)
-                    ?.let(dashboardViewModel::importFiles)
+                    ?.let {
+                        dashboardViewModel.importFiles(it)
+                        dashboardViewModel.findMedias()
+                    }
             }
         }
         children += TextField().apply {
