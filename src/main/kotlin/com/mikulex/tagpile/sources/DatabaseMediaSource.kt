@@ -10,7 +10,7 @@ import java.sql.DriverManager
 
 class DatabaseMediaSource() : MediaSource {
     companion object {
-        private val log: Logger = LoggerFactory.getLogger(DatabaseMediaSource::class.java)
+        private val LOG: Logger = LoggerFactory.getLogger(DatabaseMediaSource::class.java)
         private val MEDIA = "media"
         private val TAGS = "tags"
         private val TAG_MEDIA_REL = "tag_media_rel"
@@ -41,12 +41,14 @@ class DatabaseMediaSource() : MediaSource {
             UNIQUE(source, target)
             )
         """.trimIndent()
+
         private val FIND_ALL_MEDIAS = """
             SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate, group_concat($TAGS.code) as tag_list FROM $MEDIA
             LEFT OUTER JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
             LEFT OUTER JOIN $TAGS ON rel.source = $TAGS.pk
             GROUP BY $MEDIA.pk
             """.trimMargin()
+
         private val FIND_MEDIA_WITH_TAGS = """
             SELECT $MEDIA.pk, $MEDIA.path, $MEDIA.importDate, group_concat($TAGS.code) as tag_list FROM $MEDIA
             LEFT OUTER JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
@@ -54,6 +56,7 @@ class DatabaseMediaSource() : MediaSource {
             GROUP BY $MEDIA.pk
             HAVING $TAGS.code in (%s)
             """.trimIndent()
+
         private val FIND_TAGS_FOR_MEDIA = """
             SELECT $TAGS.code FROM $MEDIA
             JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
@@ -70,14 +73,14 @@ class DatabaseMediaSource() : MediaSource {
     private val connection: Connection = DriverManager.getConnection("jdbc:sqlite:database.db")
 
     override fun initDatabase() {
-        log.debug("initializing database")
+        LOG.debug("initializing database")
         connection.prepareStatement(CREATE_MEDIA_TABLE).execute()
         connection.prepareStatement(CREATE_TAGS_TABLE).execute()
         connection.prepareStatement(CREATE_TAG_MEDIA_REL_TABLE).execute()
     }
 
     override fun findMedias(query: String?): List<MediaDTO> {
-        log.debug("finding medias for query $query")
+        LOG.debug("finding medias for query $query")
         val statement = if (query == null || query.isEmpty()) {
             connection.prepareStatement(FIND_ALL_MEDIAS)
         } else {
@@ -152,7 +155,7 @@ class DatabaseMediaSource() : MediaSource {
             connection.autoCommit = true
             return true
         } catch (e: Exception) {
-            log.warn("Failed to add tag for media $mediaPK with tag $tag", e)
+            LOG.warn("Failed to add tag for media $mediaPK with tag $tag", e)
             connection.rollback()
             return false
         } finally {
