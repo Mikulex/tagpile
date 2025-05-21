@@ -4,6 +4,7 @@ import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import javafx.collections.ListChangeListener
+import javafx.concurrent.Task
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.ListView
@@ -81,7 +82,9 @@ class DashboardBuilder(
                     }
 
                     if (change.wasAdded()) {
-                        children += change.addedSubList.map { file -> createDashboardTile(file) }
+                        children += change.addedSubList.map { file ->
+                            createDashboardTile(file)
+                        }
                     }
                 }
             })
@@ -164,9 +167,23 @@ class DashboardBuilder(
     }
 
     private fun createDashboardTile(media: MediaDTO) = ImageView().apply {
-        this.image = Image(media.url?.toUri().toString(), 150.0, 0.0, true, true)
+        this.image = null
         this.isPreserveRatio = true
         this.userData = media
+
+        val task = object : Task<Image>() {
+            override fun call(): Image {
+                return Image(media.url?.toUri().toString(), 150.0, 0.0, true, true)
+            }
+        }
+
+        task.setOnSucceeded {
+            image = task.value
+        }
+        with(Thread(task)) {
+            isDaemon = true
+            start()
+        }
 
         dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {

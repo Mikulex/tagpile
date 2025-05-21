@@ -2,11 +2,15 @@ package com.mikulex.tagpile.model
 
 import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.sources.MediaSource
+import javafx.concurrent.Task
 
 class MediaModel(private val source: MediaSource) : IMediaModel {
-
-    override fun findMedias(query: String?): List<MediaDTO> {
-        return source.findMedias(query)
+    override fun findMedias(query: String?): Task<List<MediaDTO>> {
+        return object : Task<List<MediaDTO>>() {
+            override fun call(): List<MediaDTO>? {
+                return source.findMedias(query)
+            }
+        }
     }
 
     override fun importFile(filePath: String) {
