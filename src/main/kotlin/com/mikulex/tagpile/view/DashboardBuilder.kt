@@ -8,6 +8,7 @@ import javafx.concurrent.Task
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.ListView
+import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
@@ -68,34 +69,34 @@ class DashboardBuilder(
     }
 
     private fun buildImageTiles() = StackPane().also { stack ->
-        TilePane().apply {
-            prefColumns = 8
-            hgap = 10.0
-            vgap = 10.0
+        stack.children += ScrollPane().apply {
+            content = TilePane().apply {
+                prefColumns = 8
+                hgap = 10.0
+                vgap = 10.0
 
-            dashboardViewModel.results.addListener(ListChangeListener { change ->
-                while (change.next()) {
-                    if (change.wasRemoved()) {
-                        change.removed.forEach { r ->
-                            children.removeIf { it.userData == r }
+                dashboardViewModel.results.addListener(ListChangeListener { change ->
+                    while (change.next()) {
+                        if (change.wasRemoved()) {
+                            change.removed.forEach { r ->
+                                children.removeIf { it.userData == r }
+                            }
+                        }
+
+                        if (change.wasAdded()) {
+                            children += change.addedSubList.map { file ->
+                                createDashboardTile(file)
+                            }
                         }
                     }
+                })
+                dashboardViewModel.searchQuery.set("")
+                dashboardViewModel.findMedias()
 
-                    if (change.wasAdded()) {
-                        children += change.addedSubList.map { file ->
-                            createDashboardTile(file)
-                        }
-                    }
+                setOnMouseClicked { event ->
+                    dashboardViewModel.selectedMedias.setAll(emptyList())
                 }
-            })
-            dashboardViewModel.searchQuery.set("")
-            dashboardViewModel.findMedias()
-
-            setOnMouseClicked { event ->
-                dashboardViewModel.selectedMedias.setAll(emptyList())
             }
-
-            stack.children += this
         }
 
         val importOverlay = StackPane().apply {
@@ -107,9 +108,9 @@ class DashboardBuilder(
                 rect.heightProperty().bind(stack.heightProperty().subtract(100))
             }
             children += Text("Drag to import images")
-            stack.children += this
             isVisible = false
         }
+        stack.children += importOverlay
 
         stack.setOnDragEntered { event ->
             importOverlay.isVisible = true
