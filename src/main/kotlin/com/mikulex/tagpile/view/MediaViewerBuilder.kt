@@ -2,11 +2,10 @@ package com.mikulex.tagpile.view
 
 import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.viewmodel.MediaViewModel
-import javafx.collections.ObservableList
 import javafx.event.EventHandler
 import javafx.scene.control.Button
 import javafx.scene.control.ListView
-import javafx.scene.control.TextInputDialog
+import javafx.scene.control.TextField
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.layout.BorderPane
@@ -20,25 +19,17 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
             center = createImageTile(model.mediaFile.get())
             left = VBox().apply {
                 children += ListView(model.tags).apply { isEditable = true }
+                children += TextField().apply {
+                    promptText = "Enter tag"
+                    textProperty().bindBidirectional(model.newTag)
+                    onAction = EventHandler { _ -> model.addTagToMedia() }
+                }
 
                 children += Button("Add Tag").apply {
-                    onAction = EventHandler { _ -> openTagDialog() }
+                    onAction = EventHandler { _ -> model.addTagToMedia() }
                 }
             }
         }
-    }
-
-    private fun openTagDialog() {
-        val mediaPK = model.mediaFile.get().pk
-        TextInputDialog().apply {
-            headerText = "Add tag"
-
-            resultProperty().addListener { _, _, newValue ->
-                newValue?.takeIf { it.isNotBlank() }.let {
-                    model.tags.addIf(newValue) { s -> model.addTagToMedia(mediaPK, s) && !model.tags.contains(s) }
-                }
-            }
-        }.show()
     }
 
     private fun createImageTile(file: MediaDTO) = ImageView().apply {
@@ -52,11 +43,5 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
                 fitHeightProperty().bind(newScene.heightProperty())
             }
         }
-    }
-}
-
-private fun ObservableList<String>.addIf(newValue: String, func: (String) -> Boolean) {
-    if (func(newValue)) {
-        this.add(newValue)
     }
 }
