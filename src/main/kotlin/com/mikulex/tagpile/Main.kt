@@ -20,11 +20,13 @@ class Main : Application() {
     var mediaModel: MediaModel? = null
 
     override fun start(stage: Stage) {
+        LOG.debug("Initializing Scene")
         with(stage) {
             title = "tagpile"
             scene = createMainScene()
             show()
         }
+        LOG.debug("Finished scene initialization")
     }
 
     override fun init() {
@@ -32,6 +34,7 @@ class Main : Application() {
         val source = DatabaseMediaSource()
         source.initDatabase()
         mediaModel = MediaModel(source)
+        LOG.debug("Finished init thread")
     }
 
     private fun createMainScene(): Scene {

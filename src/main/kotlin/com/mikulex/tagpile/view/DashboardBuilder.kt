@@ -24,11 +24,15 @@ import javafx.scene.text.Text
 import javafx.stage.FileChooser
 import javafx.stage.Stage
 import javafx.util.Builder
+import org.slf4j.LoggerFactory
 
 class DashboardBuilder(
     private val dashboardViewModel: DashBoardViewModel,
     private val mediaViewModelFactory: MediaViewModelFactory
 ) : Builder<Region> {
+    companion object {
+        private val LOG = LoggerFactory.getLogger(DashboardBuilder::class.java)
+    }
 
     override fun build(): Region? {
         return BorderPane().apply {
@@ -69,6 +73,7 @@ class DashboardBuilder(
     }
 
     private fun buildImageTiles() = StackPane().also { stack ->
+        LOG.info("Initializing tile pane")
         stack.children += ScrollPane().apply {
             content = TilePane().apply {
                 prefColumns = 8
@@ -133,7 +138,7 @@ class DashboardBuilder(
             importOverlay.isVisible = false
             event.consume()
         }
-
+        LOG.info("Finished tile pane initialization")
     }
 
     private fun buildHeader(): HBox = HBox().apply {
@@ -181,10 +186,8 @@ class DashboardBuilder(
         task.setOnSucceeded {
             image = task.value
         }
-        with(Thread(task)) {
-            isDaemon = true
-            start()
-        }
+
+        Thread.startVirtualThread(task)
 
         dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {
