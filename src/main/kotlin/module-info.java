@@ -5,6 +5,5 @@ module com.mikulex.tagpile {
     requires org.slf4j;
 
 
-    opens com.mikulex.tagpile to javafx.fxml;
     exports com.mikulex.tagpile;
 }

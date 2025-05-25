@@ -21,6 +21,7 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
     }
 
     override fun build(): Region {
+        LOG.debug("Initializing Media Fiewer for {}", model.mediaFile.get())
         return BorderPane().apply {
             center = createImageTile(model.mediaFile.get())
             left = VBox().apply {
