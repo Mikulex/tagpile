@@ -2,11 +2,13 @@ package com.mikulex.tagpile.view
 
 import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.viewmodel.MediaViewModel
+import javafx.application.Platform
 import javafx.collections.ListChangeListener
 import javafx.event.EventHandler
 import javafx.scene.control.*
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.input.KeyCode
 import javafx.scene.layout.BorderPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
@@ -21,11 +23,16 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
     }
 
     override fun build(): Region {
-        LOG.debug("Initializing Media Fiewer for {}", model.mediaFile.get())
+        LOG.debug("Initializing Media Viewer for {}", model.mediaFile.get())
+
         return BorderPane().apply {
             center = createImageTile(model.mediaFile.get())
             left = VBox().apply {
                 children += ListView(model.tags).apply {
+                    isEditable = false
+                    selectionModel.selectionMode = SelectionMode.MULTIPLE
+                    cellFactory = Callback { StringListCell(model) }
+
                     selectionModel.selectedItems.addListener(ListChangeListener { change ->
                         model.tagsToRemove.clear()
                         while (change.next()) {
@@ -34,14 +41,10 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
                             }
                         }
                     })
-
-                    isEditable = false
-                    selectionModel.selectionMode = SelectionMode.MULTIPLE
-                    cellFactory = Callback { StringListCell(model) }
                 }
 
                 children += TextField().apply {
-                    promptText = "Enter tag"
+                    promptText = "Enter Tag"
                     textProperty().bindBidirectional(model.newTag)
                     onAction = EventHandler { _ -> model.addTagToMedia() }
                 }
@@ -57,6 +60,21 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
                         }
                     }
                 }
+            }
+
+            setOnKeyPressed { event ->
+                if (event.code.equals(KeyCode.ESCAPE)) {
+                    scene.window.hide()
+                }
+            }
+
+            sceneProperty().addListener { _, _, newScene ->
+                if (newScene != null) {
+                    Platform.runLater {
+                        requestFocus()
+                    }
+                }
+
             }
         }
     }

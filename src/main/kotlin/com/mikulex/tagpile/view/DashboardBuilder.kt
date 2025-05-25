@@ -3,7 +3,6 @@ package com.mikulex.tagpile.view
 import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
-import javafx.application.Platform
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
 import javafx.scene.Scene
@@ -105,15 +104,13 @@ class DashboardBuilder(
                     }
                 }
 
-                // Scene has not been fully initialized by this point, so schedule this for later
-                Platform.runLater {
-                    this.scene.setOnKeyPressed { event ->
+                sceneProperty().addListener { _, _, newScene ->
+                    newScene.setOnKeyPressed { event ->
                         if (event.code.equals(KeyCode.ESCAPE)) {
                             dashboardViewModel.selectedMedias.clear()
                         } else if (event.code.equals(KeyCode.A) && event.isControlDown) {
                             dashboardViewModel.selectAll()
                         }
-
                     }
                 }
 
@@ -193,9 +190,9 @@ class DashboardBuilder(
     }
 
     private fun createDashboardTile(media: MediaDTO) = ImageView().apply {
-        this.image = null
-        this.isPreserveRatio = true
-        this.userData = media
+        image = null
+        isPreserveRatio = true
+        userData = media
 
         object : Task<Image>() {
             override fun call(): Image {
@@ -237,6 +234,7 @@ class DashboardBuilder(
                 with(Stage()) {
                     val imageViewModel =
                         mediaViewModelFactory.create().apply { mediaFile.set(media) }.also { it.findTags() }
+                    this.title = "${media.url.toString()} - tagpile"
                     this.scene = Scene(MediaViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
                     this.show()
                 }
