@@ -43,4 +43,8 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
             start()
         }
     }
+
+    fun selectAll() {
+        selectedMedias.setAll(results)
+    }
 }

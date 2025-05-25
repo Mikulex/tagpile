@@ -3,6 +3,7 @@ package com.mikulex.tagpile.view
 import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
+import javafx.application.Platform
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
 import javafx.scene.Scene
@@ -15,6 +16,7 @@ import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
+import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.*
@@ -74,6 +76,7 @@ class DashboardBuilder(
 
     private fun buildImageTiles() = StackPane().also { stack ->
         LOG.info("Initializing tile pane")
+
         stack.children += ScrollPane().apply {
             content = TilePane().apply {
                 prefColumns = 8
@@ -95,15 +98,31 @@ class DashboardBuilder(
                         }
                     }
                 })
-                dashboardViewModel.searchQuery.set("")
-                dashboardViewModel.findMedias()
 
                 setOnMouseClicked { event ->
-                    dashboardViewModel.selectedMedias.setAll(emptyList())
+                    if (!event.isControlDown) {
+                        dashboardViewModel.selectedMedias.setAll(emptyList())
+                    }
                 }
+
+                // Scene has not been fully initialized by this point, so schedule this for later
+                Platform.runLater {
+                    this.scene.setOnKeyPressed { event ->
+                        if (event.code.equals(KeyCode.ESCAPE)) {
+                            dashboardViewModel.selectedMedias.clear()
+                        } else if (event.code.equals(KeyCode.A) && event.isControlDown) {
+                            dashboardViewModel.selectAll()
+                        }
+
+                    }
+                }
+
+                dashboardViewModel.searchQuery.set("")
+                dashboardViewModel.findMedias()
             }
         }
 
+        //Drag and Drop Handling
         val importOverlay = StackPane().apply {
             children += Rectangle().apply {
                 fill = Color.LIGHTBLUE.deriveColor(0.0, 1.0, 1.0, 0.8)
@@ -115,6 +134,7 @@ class DashboardBuilder(
             children += Text("Drag to import images")
             isVisible = false
         }
+
         stack.children += importOverlay
 
         stack.setOnDragEntered { event ->
@@ -177,17 +197,16 @@ class DashboardBuilder(
         this.isPreserveRatio = true
         this.userData = media
 
-        val task = object : Task<Image>() {
+        object : Task<Image>() {
             override fun call(): Image {
                 return Image(media.url?.toUri().toString(), 150.0, 0.0, true, true)
             }
+        }.apply {
+            setOnSucceeded {
+                image = this.value
+            }
+            Thread.startVirtualThread(this)
         }
-
-        task.setOnSucceeded {
-            image = task.value
-        }
-
-        Thread.startVirtualThread(task)
 
         dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {
@@ -204,8 +223,16 @@ class DashboardBuilder(
         })
 
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
-            dashboardViewModel.selectedMedias.setAll(listOf(media))
             event.consume()
+            if (event.isControlDown) {
+                if (dashboardViewModel.selectedMedias.contains(media)) {
+                    dashboardViewModel.selectedMedias.remove(media)
+                } else {
+                    dashboardViewModel.selectedMedias.add(media)
+                }
+            } else {
+                dashboardViewModel.selectedMedias.setAll(listOf(media))
+            }
             if (event.clickCount == 2) {
                 with(Stage()) {
                     val imageViewModel =
