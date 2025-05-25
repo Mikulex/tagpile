@@ -25,6 +25,7 @@ class MediaViewModel(private val mediaModel: MediaModel) {
 
         val mediaTags = mediaModel.findTagsForMedia(mediaFile.get().pk)
         mediaFile.get().tags = mediaTags
+        tags.setAll(mediaTags)
     }
 
     fun addTagToMedia(): Boolean {
