@@ -13,6 +13,10 @@ class MediaModel(private val source: MediaSource) : IMediaModel {
         }
     }
 
+    override fun removeTagFromMedia(mediaPk: Int, tagsToRemove: List<String>) {
+        return source.removeTag(mediaPk, tagsToRemove)
+    }
+
     override fun importFile(filePath: String) {
         return source.importFile(filePath)
     }

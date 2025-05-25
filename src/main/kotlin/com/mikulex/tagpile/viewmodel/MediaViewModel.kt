@@ -18,11 +18,13 @@ class MediaViewModel(private val mediaModel: MediaModel) {
     val mediaFile: ObjectProperty<MediaDTO> = SimpleObjectProperty()
     val tags: ObservableList<String> = FXCollections.observableArrayList()
     val newTag: StringProperty = SimpleStringProperty()
+    val tagsToRemove: ObservableList<String> = FXCollections.observableArrayList()
 
-    fun findTags(pk: Int) {
-        LOG.debug("Fetching tags for $pk")
-        val medias = mediaModel.findTagsForMedia(pk)
-        tags.setAll(medias)
+    fun findTags() {
+        LOG.debug("Fetching tags for {}", mediaFile.get())
+
+        val mediaTags = mediaModel.findTagsForMedia(mediaFile.get().pk)
+        mediaFile.get().tags = mediaTags
     }
 
     fun addTagToMedia(): Boolean {
@@ -30,11 +32,27 @@ class MediaViewModel(private val mediaModel: MediaModel) {
             return false
         }
 
+        LOG.debug("Adding tag {} to {}", newTag.get(), mediaFile.get())
+
         val addSuccess = mediaModel.addTagToMedia(mediaFile.get().pk, newTag.get())
         tags.addIf(newTag.get()) { s -> addSuccess && !tags.contains(s) }
         newTag.set("")
+        mediaFile.get().tags = tags
 
         return addSuccess
+    }
+
+    fun removeTags() {
+        LOG.debug("Removing tag {} to {}", newTag.get(), mediaFile.get())
+
+        if (tagsToRemove.isEmpty()) {
+            return
+        }
+
+        mediaModel.removeTagFromMedia(mediaFile.get().pk, tagsToRemove)
+        tags.removeAll(tagsToRemove)
+        tagsToRemove.clear()
+        mediaFile.get().tags = tags
     }
 }
 

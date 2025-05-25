@@ -208,10 +208,8 @@ class DashboardBuilder(
             event.consume()
             if (event.clickCount == 2) {
                 with(Stage()) {
-                    val imageViewModel = mediaViewModelFactory.create().apply {
-                        mediaFile.set(media)
-                        this.findTags(media.pk)
-                    }
+                    val imageViewModel =
+                        mediaViewModelFactory.create().apply { mediaFile.set(media) }.also { it.findTags() }
                     this.scene = Scene(MediaViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
                     this.show()
                 }

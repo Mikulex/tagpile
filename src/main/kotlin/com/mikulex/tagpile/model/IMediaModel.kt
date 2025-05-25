@@ -8,4 +8,5 @@ interface IMediaModel {
     fun importFile(filePath: String)
     fun findTagsForMedia(pk: Int): List<String>
     fun addTagToMedia(media: Int, tag: String): Boolean
+    fun removeTagFromMedia(mediaPk: Int, tagsToRemove: List<String>)
 }

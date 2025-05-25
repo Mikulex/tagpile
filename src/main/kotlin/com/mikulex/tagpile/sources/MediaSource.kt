@@ -8,4 +8,5 @@ interface MediaSource {
     fun importFile(filePath: String)
     fun findTagsForMedia(pk: Int): List<String>
     fun addTag(pk: Int, tag: String): Boolean
+    fun removeTag(mediaPk: Int, tagsToRemove: List<String>)
 }

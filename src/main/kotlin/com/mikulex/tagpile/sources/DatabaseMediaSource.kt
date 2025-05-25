@@ -68,6 +68,19 @@ class DatabaseMediaSource() : MediaSource {
         private val INSERT_TAG = "INSERT OR IGNORE INTO $TAGS (code) VALUES (?)"
         private val GET_TAG_PK = "SELECT pk FROM $TAGS WHERE code = ?"
         private val INSERT_INTO_MEDIA = "INSERT INTO $MEDIA (path, importDate) VALUES (?, CURRENT_TIMESTAMP)"
+        private val DELETE_TAG_FROM_MEDIA = "DELETE FROM $TAG_MEDIA_REL WHERE source = ? AND target = ?"
+    }
+
+    override fun removeTag(mediaPk: Int, tagsToRemove: List<String>) {
+        val deleteBatch = connection.prepareStatement(DELETE_TAG_FROM_MEDIA)
+        for (tag in tagsToRemove) {
+            val tagPK = connection.prepareStatement("SELECT pk FROM $TAGS WHERE code = ?").apply { setString(1, tag) }
+                .executeQuery().apply { next() }.getInt(1)
+            deleteBatch.setInt(1, tagPK)
+            deleteBatch.setInt(2, mediaPk)
+            deleteBatch.addBatch()
+        }
+        deleteBatch.executeBatch()
     }
 
     private val connection: Connection = DriverManager.getConnection("jdbc:sqlite:database.db")
