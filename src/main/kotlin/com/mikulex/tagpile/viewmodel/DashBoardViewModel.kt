@@ -2,12 +2,16 @@ package com.mikulex.tagpile.viewmodel
 
 import com.mikulex.tagpile.model.MediaModel
 import com.mikulex.tagpile.model.dto.MediaDTO
+import javafx.beans.property.IntegerProperty
+import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.StringProperty
 import javafx.collections.FXCollections
 import javafx.collections.ObservableList
 import org.slf4j.LoggerFactory
 import java.io.File
+import kotlin.math.max
+import kotlin.math.min
 
 class DashBoardViewModel(private val mediaModel: MediaModel) {
     private val LOG = LoggerFactory.getLogger(MediaModel::class.java)
@@ -15,6 +19,7 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
     val results: ObservableList<MediaDTO> = FXCollections.observableArrayList()
     val resultTags: ObservableList<String> = FXCollections.observableArrayList()
     val selectedMedias: ObservableList<MediaDTO> = FXCollections.observableArrayList()
+    private val lastSelectedIndex: IntegerProperty = SimpleIntegerProperty(0)
 
     fun importFiles(file: List<File>) {
         file.map { it.toURI().toString() }.forEach { it -> mediaModel.importFile(it) }
@@ -52,5 +57,23 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
     fun deleteSelected() {
         mediaModel.deleteMedias(selectedMedias.map { it.pk })
         findMedias()
+    }
+
+    fun setLastSelectedMedia(media: MediaDTO) {
+        lastSelectedIndex.set(results.indexOf(media))
+    }
+
+    fun selectTo(media: MediaDTO, replace: Boolean = true) {
+        val i = lastSelectedIndex.get()
+        val j = results.indexOf(media)
+        val fromIndex = min(i, j)
+        val toIndex = max(i, j)
+        val subList = results.subList(fromIndex, toIndex + 1)
+        if (replace) {
+            selectedMedias.setAll(subList)
+        } else {
+            selectedMedias.addAll(subList.filter { results.contains(it) })
+        }
+
     }
 }

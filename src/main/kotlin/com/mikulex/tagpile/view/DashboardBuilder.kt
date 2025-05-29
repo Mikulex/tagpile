@@ -52,6 +52,14 @@ class DashboardBuilder(
 
         children += previewImageView
 
+        children += Text().apply {
+            dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
+                while (change.next()) {
+                    this.text = "${change.list.size} items selected"
+                }
+            })
+        }
+
         dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {
                 if (dashboardViewModel.selectedMedias.size == 1) {
@@ -222,16 +230,29 @@ class DashboardBuilder(
         })
 
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
+        }
+
+        this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
             event.consume()
-            if (event.isControlDown) {
+
+            if (!event.isShiftDown && !event.isControlDown) {
+                dashboardViewModel.setLastSelectedMedia(media)
+                dashboardViewModel.selectedMedias.setAll(listOf(media))
+            } else if (event.isControlDown && event.isShiftDown) {
+                dashboardViewModel.selectTo(media, false)
+            } else if (event.isControlDown && !event.isShiftDown) {
+                dashboardViewModel.setLastSelectedMedia(media)
                 if (dashboardViewModel.selectedMedias.contains(media)) {
                     dashboardViewModel.selectedMedias.remove(media)
                 } else {
                     dashboardViewModel.selectedMedias.add(media)
                 }
-            } else {
-                dashboardViewModel.selectedMedias.setAll(listOf(media))
+            } else if (!event.isControlDown && event.isShiftDown) {
+                dashboardViewModel.selectTo(media, true)
             }
+        }
+
+        this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
             if (event.clickCount == 2) {
                 with(Stage()) {
                     val imageViewModel =
@@ -242,5 +263,6 @@ class DashboardBuilder(
                 }
             }
         }
+
     }
 }
