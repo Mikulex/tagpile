@@ -9,4 +9,5 @@ interface IMediaModel {
     fun findTagsForMedia(pk: Int): List<String>
     fun addTagToMedia(media: Int, tag: String): Boolean
     fun removeTagFromMedia(mediaPk: Int, tagsToRemove: List<String>)
+    fun deleteMedias(selectedMedias: List<Int>)
 }

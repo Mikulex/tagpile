@@ -37,7 +37,7 @@ class DatabaseMediaSource() : MediaSource {
             source INTEGER,
             target INTEGER,
             FOREIGN KEY(source) REFERENCES $TAGS(pk),
-            FOREIGN KEY(target) REFERENCES $MEDIA(pk),
+            FOREIGN KEY(target) REFERENCES $MEDIA(pk) ON DELETE CASCADE,
             UNIQUE(source, target)
             )
         """.trimIndent()
@@ -69,6 +69,16 @@ class DatabaseMediaSource() : MediaSource {
         private val GET_TAG_PK = "SELECT pk FROM $TAGS WHERE code = ?"
         private val INSERT_INTO_MEDIA = "INSERT INTO $MEDIA (path, importDate) VALUES (?, CURRENT_TIMESTAMP)"
         private val DELETE_TAG_FROM_MEDIA = "DELETE FROM $TAG_MEDIA_REL WHERE source = ? AND target = ?"
+        private val DELETE_MEDIA = "DELETE FROM $MEDIA WHERE pk = ?"
+    }
+
+    override fun deleteMedias(selectedMedias: List<Int>) {
+        val deleteBatch = connection.prepareStatement(DELETE_MEDIA)
+        for (pk in selectedMedias) {
+            deleteBatch.setInt(1, pk)
+            deleteBatch.addBatch()
+        }
+        deleteBatch.executeBatch()
     }
 
     override fun removeTag(mediaPk: Int, tagsToRemove: List<String>) {
@@ -83,7 +93,9 @@ class DatabaseMediaSource() : MediaSource {
         deleteBatch.executeBatch()
     }
 
-    private val connection: Connection = DriverManager.getConnection("jdbc:sqlite:database.db")
+    private val connection: Connection = DriverManager.getConnection("jdbc:sqlite:database.db").apply {
+        prepareStatement("PRAGMA foreign_keys = ON").execute()
+    }
 
     override fun initDatabase() {
         LOG.debug("initializing database")

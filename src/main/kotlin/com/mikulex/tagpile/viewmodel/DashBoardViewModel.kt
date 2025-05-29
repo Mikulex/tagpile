@@ -32,6 +32,7 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
             LOG.info("updating tag state")
             resultTags.setAll(tags)
             LOG.info("finished fetching medias")
+            selectedMedias.clear()
         }
 
         task.setOnFailed { event ->
@@ -46,5 +47,10 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
 
     fun selectAll() {
         selectedMedias.setAll(results)
+    }
+
+    fun deleteSelected() {
+        mediaModel.deleteMedias(selectedMedias.map { it.pk })
+        findMedias()
     }
 }

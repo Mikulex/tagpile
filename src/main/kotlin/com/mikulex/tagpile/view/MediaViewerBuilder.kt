@@ -74,7 +74,6 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
                         requestFocus()
                     }
                 }
-
             }
         }
     }

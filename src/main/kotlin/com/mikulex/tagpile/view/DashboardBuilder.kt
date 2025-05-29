@@ -110,6 +110,8 @@ class DashboardBuilder(
                             dashboardViewModel.selectedMedias.clear()
                         } else if (event.code.equals(KeyCode.A) && event.isControlDown) {
                             dashboardViewModel.selectAll()
+                        } else if (event.code.equals(KeyCode.DELETE)) {
+                            dashboardViewModel.deleteSelected()
                         }
                     }
                 }
