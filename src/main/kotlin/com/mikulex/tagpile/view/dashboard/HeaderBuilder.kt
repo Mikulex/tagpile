@@ -33,9 +33,11 @@ class HeaderBuilder(private val dashboardViewModel: DashBoardViewModel) : Builde
         children += TextField().apply {
             this.textProperty().bindBidirectional(dashboardViewModel.searchQuery)
             this.promptText = "Search"
-            this.setOnAction {
-                dashboardViewModel.findMedias()
-            }
+            this.setOnAction { dashboardViewModel.findMedias() }
+        }
+
+        children += Button("Search").apply {
+            this.setOnAction { dashboardViewModel.findMedias() }
         }
     }
 }
