@@ -192,6 +192,7 @@ class DashboardBuilder(
             title = "Open File"
             extensionFilters.setAll(FileChooser.ExtensionFilter("images", "*.jpg", "*.jpeg", "*.png", "*.gif"))
         }
+
         children += Button("Import Image").apply {
             setOnAction {
                 fileChooser.showOpenMultipleDialog(this.scene.window)?.let {
@@ -200,6 +201,7 @@ class DashboardBuilder(
                 }
             }
         }
+
         children += TextField().apply {
             this.textProperty().bindBidirectional(dashboardViewModel.searchQuery)
             this.promptText = "Search"
@@ -223,16 +225,17 @@ class DashboardBuilder(
         userData = media
         isPickOnBounds = true
 
-        object : Task<Image>() {
-            override fun call(): Image {
-                return Image(media.url?.toUri().toString(), 150.0, 0.0, true, true)
+        Thread.startVirtualThread(
+            object : Task<Image>() {
+                override fun call(): Image {
+                    return Image(media.url?.toUri().toString(), 150.0, 0.0, true, true)
+                }
+            }.apply {
+                setOnSucceeded {
+                    image = this.value
+                }
             }
-        }.apply {
-            setOnSucceeded {
-                image = this.value
-            }
-            Thread.startVirtualThread(this)
-        }
+        )
 
         dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {
@@ -279,6 +282,5 @@ class DashboardBuilder(
                 }
             }
         }
-
     }
 }
