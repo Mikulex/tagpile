@@ -1,13 +1,13 @@
-package com.mikulex.tagpile.view
+package com.mikulex.tagpile.view.dashboard
 
 import com.mikulex.tagpile.model.dto.MediaDTO
+import com.mikulex.tagpile.view.MediaViewerBuilder
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
-import javafx.geometry.Orientation
 import javafx.scene.Scene
-import javafx.scene.control.*
+import javafx.scene.control.ScrollPane
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
@@ -16,91 +16,25 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
-import javafx.scene.layout.*
+import javafx.scene.layout.Region
+import javafx.scene.layout.StackPane
+import javafx.scene.layout.TilePane
 import javafx.scene.paint.Color
 import javafx.scene.shape.Rectangle
 import javafx.scene.text.Text
-import javafx.stage.FileChooser
 import javafx.stage.Stage
 import javafx.util.Builder
 import org.slf4j.LoggerFactory
 
-class DashboardBuilder(
-    private val dashboardViewModel: DashBoardViewModel, private val mediaViewModelFactory: MediaViewModelFactory
+class MediaPaneBuilder(
+    private val dashboardViewModel: DashBoardViewModel,
+    private val mediaViewModelFactory: MediaViewModelFactory
 ) : Builder<Region> {
     companion object {
-        private val LOG = LoggerFactory.getLogger(DashboardBuilder::class.java)
+        private val LOG = LoggerFactory.getLogger(MediaPaneBuilder::class.java)
     }
 
-    override fun build(): Region? {
-        return BorderPane().apply {
-            center = buildImageTiles()
-            top = buildHeader()
-            left = buildTagBar()
-            right = buildMetaDataBar()
-            bottom = buildInfoBar()
-        }
-    }
-
-    private fun buildInfoBar() = HBox().apply {
-        children += Text("0 total items").apply {
-            dashboardViewModel.results.addListener(ListChangeListener { change ->
-                while (change.next()) {
-                    this.text = "${change.list.size} total items"
-                }
-            })
-        }
-
-        children += Separator().apply {
-            orientation = Orientation.VERTICAL
-        }
-
-        children += Text("0 items selected").apply {
-            dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
-                while (change.next()) {
-                    this.text = "${change.list.size} items selected"
-                }
-            })
-        }
-    }
-
-    private fun buildMetaDataBar() = VBox().apply {
-        val previewImageView = ImageView().apply {
-            isPreserveRatio = true
-            fitWidth = 300.0
-        }
-
-        children += previewImageView
-
-        children += Text().apply {
-            dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
-                while (change.next()) {
-                    this.text = "${change.list.size} items selected"
-                }
-            })
-        }
-
-        dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
-            while (change.next()) {
-                if (dashboardViewModel.selectedMedias.size == 1) {
-                    dashboardViewModel.selectedMedias.firstOrNull()?.url?.toUri()?.let {
-                        previewImageView.image = Image(
-                            it.toString(), 500.0, 500.0, true, true
-                        )
-                        previewImageView.isVisible = true
-                    } ?: let {
-                        previewImageView.image = null
-                        previewImageView.isVisible = false
-                    }
-                } else {
-                    previewImageView.image = null
-                    previewImageView.isVisible = false
-                }
-            }
-        })
-    }
-
-    private fun buildImageTiles() = StackPane().also { stack ->
+    override fun build() = StackPane().also { stack ->
         LOG.info("Initializing tile pane")
 
         stack.children += ScrollPane().apply {
@@ -119,7 +53,7 @@ class DashboardBuilder(
 
                         if (change.wasAdded()) {
                             children += change.addedSubList.map { file ->
-                                createDashboardTile(file)
+                                createTile(file)
                             }
                         }
                     }
@@ -187,39 +121,7 @@ class DashboardBuilder(
         LOG.info("Finished tile pane initialization")
     }
 
-    private fun buildHeader(): HBox = HBox().apply {
-        val fileChooser = FileChooser().apply {
-            title = "Open File"
-            extensionFilters.setAll(FileChooser.ExtensionFilter("images", "*.jpg", "*.jpeg", "*.png", "*.gif"))
-        }
-
-        children += Button("Import Image").apply {
-            setOnAction {
-                fileChooser.showOpenMultipleDialog(this.scene.window)?.let {
-                    dashboardViewModel.importFiles(it)
-                    dashboardViewModel.findMedias()
-                }
-            }
-        }
-
-        children += TextField().apply {
-            this.textProperty().bindBidirectional(dashboardViewModel.searchQuery)
-            this.promptText = "Search"
-            this.setOnAction {
-                dashboardViewModel.findMedias()
-            }
-        }
-    }
-
-    private fun buildTagBar(): VBox {
-        val listView: ListView<String> = ListView(dashboardViewModel.resultTags)
-        return VBox().apply {
-            children.add(listView)
-            prefWidth = 100.0
-        }
-    }
-
-    private fun createDashboardTile(media: MediaDTO) = ImageView().apply {
+    private fun createTile(media: MediaDTO) = ImageView().apply {
         image = null
         isPreserveRatio = true
         userData = media
@@ -284,3 +186,4 @@ class DashboardBuilder(
         }
     }
 }
+

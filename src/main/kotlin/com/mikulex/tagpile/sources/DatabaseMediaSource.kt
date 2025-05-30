@@ -155,7 +155,7 @@ class DatabaseMediaSource() : MediaSource {
         }
     }
 
-    override fun addTag(mediaPK: Int, tag: String): Boolean {
+    override fun addTag(mediaPk: Int, tag: String): Boolean {
         try {
             connection.autoCommit = false
 
@@ -176,14 +176,14 @@ class DatabaseMediaSource() : MediaSource {
 
             connection.prepareStatement(ADD_MEDIA_TAG_REL).run {
                 setInt(1, tagPK)
-                setInt(2, mediaPK)
+                setInt(2, mediaPk)
                 executeUpdate()
             }
             connection.commit()
             connection.autoCommit = true
             return true
         } catch (e: Exception) {
-            LOG.warn("Failed to add tag for media $mediaPK with tag $tag", e)
+            LOG.warn("Failed to add tag for media $mediaPk with tag $tag", e)
             connection.rollback()
             return false
         } finally {

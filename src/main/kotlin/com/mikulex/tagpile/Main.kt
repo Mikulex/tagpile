@@ -2,7 +2,7 @@ package com.mikulex.tagpile
 
 import com.mikulex.tagpile.model.MediaModel
 import com.mikulex.tagpile.sources.DatabaseMediaSource
-import com.mikulex.tagpile.view.DashboardBuilder
+import com.mikulex.tagpile.view.dashboard.DashboardBuilder
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import javafx.application.Application
