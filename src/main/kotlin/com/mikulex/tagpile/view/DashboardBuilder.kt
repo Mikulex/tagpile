@@ -230,9 +230,6 @@ class DashboardBuilder(
         })
 
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
-        }
-
-        this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
             event.consume()
 
             if (!event.isShiftDown && !event.isControlDown) {

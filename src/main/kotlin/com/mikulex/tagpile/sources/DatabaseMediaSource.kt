@@ -54,7 +54,7 @@ class DatabaseMediaSource() : MediaSource {
             LEFT OUTER JOIN $TAG_MEDIA_REL AS rel ON rel.target = $MEDIA.pk
             LEFT OUTER JOIN $TAGS ON rel.source = $TAGS.pk
             GROUP BY $MEDIA.pk
-            HAVING $TAGS.code in (%s)
+            HAVING count(DISTINCT CASE WHEN $TAGS.code IN (%s) THEN $TAGS.code END) = ?
             """.trimIndent()
 
         private val FIND_TAGS_FOR_MEDIA = """
@@ -109,12 +109,15 @@ class DatabaseMediaSource() : MediaSource {
         val statement = if (query == null || query.isEmpty()) {
             connection.prepareStatement(FIND_ALL_MEDIAS)
         } else {
-            val tags = query.split(" ")
+            val tags = query.split(" ").toSet()
             val params = List(tags.size) { "?" }.joinToString(",")
             connection.prepareStatement(FIND_MEDIA_WITH_TAGS.format(params)).apply {
+                var i = 0
                 tags.forEachIndexed { idx, tag ->
+                    i = idx + 1
                     setString(idx + 1, tag)
                 }
+                setInt(i + 1, tags.size)
             }
         }
         val res = statement.executeQuery()
