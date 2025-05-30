@@ -5,11 +5,9 @@ import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
+import javafx.geometry.Orientation
 import javafx.scene.Scene
-import javafx.scene.control.Button
-import javafx.scene.control.ListView
-import javafx.scene.control.ScrollPane
-import javafx.scene.control.TextField
+import javafx.scene.control.*
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
@@ -28,8 +26,7 @@ import javafx.util.Builder
 import org.slf4j.LoggerFactory
 
 class DashboardBuilder(
-    private val dashboardViewModel: DashBoardViewModel,
-    private val mediaViewModelFactory: MediaViewModelFactory
+    private val dashboardViewModel: DashBoardViewModel, private val mediaViewModelFactory: MediaViewModelFactory
 ) : Builder<Region> {
     companion object {
         private val LOG = LoggerFactory.getLogger(DashboardBuilder::class.java)
@@ -41,6 +38,29 @@ class DashboardBuilder(
             top = buildHeader()
             left = buildTagBar()
             right = buildMetaDataBar()
+            bottom = buildInfoBar()
+        }
+    }
+
+    private fun buildInfoBar() = HBox().apply {
+        children += Text("0 total items").apply {
+            dashboardViewModel.results.addListener(ListChangeListener { change ->
+                while (change.next()) {
+                    this.text = "${change.list.size} total items"
+                }
+            })
+        }
+
+        children += Separator().apply {
+            orientation = Orientation.VERTICAL
+        }
+
+        children += Text("0 items selected").apply {
+            dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
+                while (change.next()) {
+                    this.text = "${change.list.size} items selected"
+                }
+            })
         }
     }
 
@@ -65,8 +85,7 @@ class DashboardBuilder(
                 if (dashboardViewModel.selectedMedias.size == 1) {
                     dashboardViewModel.selectedMedias.firstOrNull()?.url?.toUri()?.let {
                         previewImageView.image = Image(
-                            it.toString(),
-                            500.0, 500.0, true, true
+                            it.toString(), 500.0, 500.0, true, true
                         )
                         previewImageView.isVisible = true
                     } ?: let {
@@ -175,11 +194,10 @@ class DashboardBuilder(
         }
         children += Button("Import Image").apply {
             setOnAction {
-                fileChooser.showOpenMultipleDialog(this.scene.window)
-                    ?.let {
-                        dashboardViewModel.importFiles(it)
-                        dashboardViewModel.findMedias()
-                    }
+                fileChooser.showOpenMultipleDialog(this.scene.window)?.let {
+                    dashboardViewModel.importFiles(it)
+                    dashboardViewModel.findMedias()
+                }
             }
         }
         children += TextField().apply {
@@ -203,6 +221,7 @@ class DashboardBuilder(
         image = null
         isPreserveRatio = true
         userData = media
+        isPickOnBounds = true
 
         object : Task<Image>() {
             override fun call(): Image {
