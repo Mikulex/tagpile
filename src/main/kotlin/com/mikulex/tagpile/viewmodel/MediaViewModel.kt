@@ -28,17 +28,18 @@ class MediaViewModel(private val mediaModel: MediaModel) {
         tags.setAll(mediaTags)
     }
 
-    fun addTagToMedia(): Boolean {
-        if (newTag.get().isEmpty()) {
+    fun addTagsToMedia(): Boolean {
+        val tagsToAdd = newTag.get().split(" ")
+        if (tagsToAdd.isEmpty()) {
             return false
         }
 
-        LOG.debug("Adding tag {} to {}", newTag.get(), mediaFile.get())
+        LOG.debug("Adding tags {} to {}", tagsToAdd, mediaFile.get())
 
-        val addSuccess = mediaModel.addTagToMedia(mediaFile.get().pk, newTag.get())
-        tags.addIf(newTag.get()) { s -> addSuccess && !tags.contains(s) }
+        val addSuccess = mediaModel.addTagsToMedia(mediaFile.get().pk, tagsToAdd)
+        tagsToAdd.filterNot { tags.contains(it) }.let { tags.addAll(it) }
         newTag.set("")
-        mediaFile.get().tags = tags
+        mediaFile.get().tags = tagsToAdd
 
         return addSuccess
     }
@@ -53,7 +54,7 @@ class MediaViewModel(private val mediaModel: MediaModel) {
         mediaModel.removeTagFromMedia(mediaFile.get().pk, tagsToRemove)
         tags.removeAll(tagsToRemove)
         tagsToRemove.clear()
-        mediaFile.get().tags = tags
+        mediaFile.get().tags = tags.toList()
     }
 }
 

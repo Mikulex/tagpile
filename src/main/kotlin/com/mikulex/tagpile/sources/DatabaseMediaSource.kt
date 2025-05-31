@@ -155,35 +155,37 @@ class DatabaseMediaSource() : MediaSource {
         }
     }
 
-    override fun addTag(mediaPk: Int, tag: String): Boolean {
+    override fun addTags(mediaPk: Int, tags: List<String>): Boolean {
         try {
             connection.autoCommit = false
 
-            connection.prepareStatement(INSERT_TAG).apply {
-                setString(1, tag)
-                executeUpdate()
-            }
+            for (tag in tags) {
+                connection.prepareStatement(INSERT_TAG).apply {
+                    setString(1, tag)
+                    executeUpdate()
+                }
 
-            val tagPK = connection.prepareStatement(
-                GET_TAG_PK.trimIndent()
-            ).run {
-                setString(1, tag)
-                executeQuery()
-            }.run {
-                next()
-                getInt("pk")
-            }
+                val tagPK = connection.prepareStatement(
+                    GET_TAG_PK.trimIndent()
+                ).run {
+                    setString(1, tag)
+                    executeQuery()
+                }.run {
+                    next()
+                    getInt("pk")
+                }
 
-            connection.prepareStatement(ADD_MEDIA_TAG_REL).run {
-                setInt(1, tagPK)
-                setInt(2, mediaPk)
-                executeUpdate()
+                connection.prepareStatement(ADD_MEDIA_TAG_REL).run {
+                    setInt(1, tagPK)
+                    setInt(2, mediaPk)
+                    executeUpdate()
+                }
             }
             connection.commit()
             connection.autoCommit = true
             return true
         } catch (e: Exception) {
-            LOG.warn("Failed to add tag for media $mediaPk with tag $tag", e)
+            LOG.warn("Failed to add tag for media $mediaPk with tag $tags", e)
             connection.rollback()
             return false
         } finally {

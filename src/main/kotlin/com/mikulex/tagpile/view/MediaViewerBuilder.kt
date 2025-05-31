@@ -50,12 +50,12 @@ class MediaViewerBuilder(private val model: MediaViewModel) : Builder<Region> {
                 children += TextField().apply {
                     promptText = "Enter Tag"
                     textProperty().bindBidirectional(model.newTag)
-                    onAction = EventHandler { _ -> model.addTagToMedia() }
+                    onAction = EventHandler { _ -> model.addTagsToMedia() }
                 }
 
                 children += HBox().apply {
                     children += Button("Add Tag").apply {
-                        onAction = EventHandler { _ -> model.addTagToMedia() }
+                        onAction = EventHandler { _ -> model.addTagsToMedia() }
                     }
 
                     children += Button("Remove selected").apply {

@@ -7,7 +7,7 @@ interface IMediaModel {
     fun findMedias(query: String?): Task<List<MediaDTO>>
     fun importFile(filePath: String)
     fun findTagsForMedia(pk: Int): List<String>
-    fun addTagToMedia(media: Int, tag: String): Boolean
+    fun addTagsToMedia(media: Int, tags: List<String>): Boolean
     fun removeTagFromMedia(mediaPk: Int, tagsToRemove: List<String>)
     fun deleteMedias(selectedMedias: List<Int>)
 }
