@@ -6,6 +6,7 @@ import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
+import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.scene.control.ScrollPane
 import javafx.scene.effect.Blend
@@ -13,9 +14,7 @@ import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.input.KeyCode
-import javafx.scene.input.MouseEvent
-import javafx.scene.input.TransferMode
+import javafx.scene.input.*
 import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.TilePane
@@ -73,6 +72,20 @@ class MediaPaneBuilder(
                             dashboardViewModel.selectAll()
                         } else if (event.code.equals(KeyCode.DELETE)) {
                             dashboardViewModel.deleteSelected()
+                        }
+                    }
+
+                    newScene.onKeyPressed = EventHandler { event ->
+                        if (event.code == KeyCode.C && event.isControlDown) {
+                            if (dashboardViewModel.selectedMedias.size == 1) {
+                                LOG.debug("Copying Media to Clipboard")
+                                dashboardViewModel.selectedMedias.first().url?.toUri()?.toString()
+                                    ?.let {
+                                        Clipboard.getSystemClipboard().setContent(ClipboardContent().apply {
+                                            putImage(Image(it))
+                                        })
+                                    }
+                            }
                         }
                     }
                 }
