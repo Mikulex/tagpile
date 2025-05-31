@@ -57,9 +57,3 @@ class MediaViewModel(private val mediaModel: MediaModel) {
         mediaFile.get().tags = tags.toList()
     }
 }
-
-private fun ObservableList<String>.addIf(newValue: String, func: (String) -> Boolean) {
-    if (func(newValue)) {
-        this.add(newValue)
-    }
-}
