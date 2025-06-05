@@ -54,6 +54,11 @@
             <artifactId>slf4j-jdk14</artifactId>
             <version>2.0.16</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.mkpaz</groupId>
+            <artifactId>atlantafx-base</artifactId>
+            <version>2.0.0</version>
+        </dependency>
     </dependencies>
 
     <build>

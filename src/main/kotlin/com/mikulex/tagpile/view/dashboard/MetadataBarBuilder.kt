@@ -1,6 +1,7 @@
 package com.mikulex.tagpile.view.dashboard
 
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
+import javafx.beans.binding.Bindings
 import javafx.collections.ListChangeListener
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
@@ -10,15 +11,16 @@ import javafx.scene.text.Text
 import javafx.util.Builder
 
 class MetadataBarBuilder(private val dashboardViewModel: DashBoardViewModel) : Builder<Region> {
-    override fun build() = VBox().apply {
+    override fun build() = VBox().also { outer ->
         val previewImageView = ImageView().apply {
+            fitWidthProperty().bind(dashboardViewModel.imageWidthProperty)
             isPreserveRatio = true
-            fitWidth = 299.0
         }
+        outer.maxWidthProperty().bind(dashboardViewModel.metadataWithProperty)
 
-        children += previewImageView
+        outer.children += previewImageView
 
-        children += Text().apply {
+        outer.children += Text().apply {
             dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
                 while (change.next()) {
                     this.text = "${change.list.size} items selected"
@@ -29,9 +31,7 @@ class MetadataBarBuilder(private val dashboardViewModel: DashBoardViewModel) : B
         dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
             while (change.next()) {
                 dashboardViewModel.selectedMedias.firstOrNull()?.url?.toUri()?.let {
-                    previewImageView.image = Image(
-                        it.toString(), 499.0, 500.0, true, true
-                    )
+                    previewImageView.image = Image(it.toString(), true)
                     previewImageView.isVisible = true
                 } ?: let {
                     previewImageView.image = null

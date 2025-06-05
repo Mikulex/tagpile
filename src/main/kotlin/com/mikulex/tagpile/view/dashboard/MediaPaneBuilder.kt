@@ -4,11 +4,14 @@ import com.mikulex.tagpile.model.dto.MediaDTO
 import com.mikulex.tagpile.view.MediaViewerBuilder
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
 import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
+import javafx.beans.binding.Bindings
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
 import javafx.event.EventHandler
+import javafx.geometry.Orientation
 import javafx.scene.Scene
 import javafx.scene.control.ScrollPane
+import javafx.scene.control.SplitPane
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
@@ -33,7 +36,21 @@ class MediaPaneBuilder(
         private val LOG = LoggerFactory.getLogger(MediaPaneBuilder::class.java)
     }
 
-    override fun build() = StackPane().also { stack ->
+    override fun build() = SplitPane().apply {
+        items += createTiles()
+        items += MetadataBarBuilder(dashboardViewModel).build()
+        dashboardViewModel.imageWidthProperty.bind(
+            Bindings.subtract(1, this.dividers[0].positionProperty()).multiply(this.widthProperty()).subtract(20)
+        )
+        dashboardViewModel.metadataWithProperty.bind(this.widthProperty().multiply(0.5))
+
+        this.dividers[0].positionProperty().addListener { _,_,newVal ->
+            println(newVal)
+        }
+        orientation = Orientation.HORIZONTAL
+    }
+
+    private fun createTiles() = StackPane().also { stack ->
         LOG.info("Initializing tile pane")
 
         stack.children += ScrollPane().apply {

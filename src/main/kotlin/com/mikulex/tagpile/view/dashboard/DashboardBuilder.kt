@@ -20,7 +20,6 @@ class DashboardBuilder(
             center = MediaPaneBuilder(dashboardViewModel, mediaViewModelFactory).build()
             top = HeaderBuilder(dashboardViewModel).build()
             left = TagBarBuilder(dashboardViewModel).build()
-            right = MetadataBarBuilder(dashboardViewModel).build()
             bottom = InfoBarBuilder(dashboardViewModel).build()
         }
     }

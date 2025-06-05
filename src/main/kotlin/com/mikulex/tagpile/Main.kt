@@ -1,5 +1,6 @@
 package com.mikulex.tagpile
 
+import atlantafx.base.theme.PrimerDark
 import com.mikulex.tagpile.model.MediaModel
 import com.mikulex.tagpile.sources.DatabaseMediaSource
 import com.mikulex.tagpile.view.dashboard.DashboardBuilder
@@ -12,8 +13,8 @@ import org.slf4j.LoggerFactory
 
 class Main : Application() {
     companion object {
-        private const val WINDOW_WIDTH = 1920.0
-        private const val WINDOW_HEIGHT = 1080.0
+        private const val WINDOW_WIDTH = 800.0
+        private const val WINDOW_HEIGHT = 600.0
         private val LOG = LoggerFactory.getLogger(Main::class.java)
     }
 
@@ -21,6 +22,7 @@ class Main : Application() {
 
     override fun start(stage: Stage) {
         LOG.debug("Initializing Scene")
+        setUserAgentStylesheet(PrimerDark().getUserAgentStylesheet())
         with(stage) {
             title = "tagpile"
             scene = createMainScene()

@@ -2,7 +2,9 @@ package com.mikulex.tagpile.viewmodel
 
 import com.mikulex.tagpile.model.MediaModel
 import com.mikulex.tagpile.model.dto.MediaDTO
+import javafx.beans.property.DoubleProperty
 import javafx.beans.property.IntegerProperty
+import javafx.beans.property.SimpleDoubleProperty
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.property.StringProperty
@@ -20,6 +22,8 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
     val resultTags: ObservableList<String> = FXCollections.observableArrayList()
     val selectedMedias: ObservableList<MediaDTO> = FXCollections.observableArrayList()
     private val lastSelectedIndex: IntegerProperty = SimpleIntegerProperty(0)
+    val imageWidthProperty: DoubleProperty = SimpleDoubleProperty(300.0)
+    val metadataWithProperty: DoubleProperty = SimpleDoubleProperty(300.0)
 
     fun importFiles(file: List<File>) {
         file.map { it.toURI().toString() }.forEach { it -> mediaModel.importFile(it) }
