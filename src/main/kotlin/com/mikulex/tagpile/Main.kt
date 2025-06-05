@@ -22,7 +22,6 @@ class Main : Application() {
 
     override fun start(stage: Stage) {
         LOG.debug("Initializing Scene")
-        setUserAgentStylesheet(PrimerDark().getUserAgentStylesheet())
         with(stage) {
             title = "tagpile"
             scene = createMainScene()

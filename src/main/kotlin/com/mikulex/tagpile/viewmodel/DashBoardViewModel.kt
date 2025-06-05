@@ -80,4 +80,20 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
         }
 
     }
+
+    fun addTagsToSelectedMedias(query: String) {
+        val tagsToAdd = query.split(" ")
+        if (tagsToAdd.isEmpty()) {
+            return
+        }
+
+        for (media: MediaDTO in selectedMedias) {
+            LOG.debug("Adding tags {} to {}", tagsToAdd, media)
+
+            val addSuccess = mediaModel.addTagsToMedia(media.pk, tagsToAdd)
+            media.tags = tagsToAdd
+
+
+        }
+    }
 }

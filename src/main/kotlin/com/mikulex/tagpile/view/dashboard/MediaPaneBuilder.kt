@@ -12,6 +12,7 @@ import javafx.geometry.Orientation
 import javafx.scene.Scene
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.SplitPane
+import javafx.scene.control.TextInputDialog
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
@@ -42,7 +43,7 @@ class MediaPaneBuilder(
         dashboardViewModel.imageWidthProperty.bind(
             Bindings.subtract(1, this.dividers[0].positionProperty()).multiply(this.widthProperty()).subtract(20)
         )
-        dashboardViewModel.metadataWithProperty.bind(this.widthProperty().multiply(0.5))
+        dashboardViewModel.metadataWithProperty.bind(this.widthProperty().multiply(0.30))
 
         this.dividers[0].positionProperty().addListener { _, _, newVal ->
             println(newVal)
@@ -98,6 +99,19 @@ class MediaPaneBuilder(
                                             putImage(Image(it))
                                         })
                                     }
+                            }
+                        } else if (event.code == KeyCode.T) {
+                            TextInputDialog().apply {
+                                headerText =
+                                    "Enter tags to add to ${dashboardViewModel.selectedMedias.size} selected medias"
+
+                                resultProperty().addListener { _, _, newValue ->
+                                    newValue?.takeIf { it.isNotBlank() }?.let {
+                                        dashboardViewModel.addTagsToSelectedMedias(it)
+                                    }
+                                }
+                                show()
+
                             }
                         }
                     }
@@ -178,6 +192,7 @@ class MediaPaneBuilder(
                 }
             }
         })
+
 
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
             event.consume()
