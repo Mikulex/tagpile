@@ -44,7 +44,7 @@ class MediaPaneBuilder(
         )
         dashboardViewModel.metadataWithProperty.bind(this.widthProperty().multiply(0.5))
 
-        this.dividers[0].positionProperty().addListener { _,_,newVal ->
+        this.dividers[0].positionProperty().addListener { _, _, newVal ->
             println(newVal)
         }
         orientation = Orientation.HORIZONTAL
@@ -89,11 +89,7 @@ class MediaPaneBuilder(
                             dashboardViewModel.selectAll()
                         } else if (event.code.equals(KeyCode.DELETE)) {
                             dashboardViewModel.deleteSelected()
-                        }
-                    }
-
-                    newScene.onKeyPressed = EventHandler { event ->
-                        if (event.code == KeyCode.C && event.isControlDown) {
+                        } else if (event.code == KeyCode.C && event.isControlDown) {
                             if (dashboardViewModel.selectedMedias.size == 1) {
                                 LOG.debug("Copying Media to Clipboard")
                                 dashboardViewModel.selectedMedias.first().url?.toUri()?.toString()
