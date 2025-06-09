@@ -191,10 +191,6 @@ class MediaPaneBuilder(
                         imageView.image = this.value
                         imageView.fitWidthProperty().bind(box.widthProperty().multiply(0.9))
                         imageView.fitHeightProperty().bind(box.heightProperty().multiply(0.9))
-                        imageView.xProperty()
-                            .bind(Bindings.subtract(box.widthProperty(), imageView.prefWidth(-1.0)).divide(2))
-                        imageView.yProperty()
-                            .bind(Bindings.subtract(box.heightProperty(), imageView.prefHeight(-1.0)).divide(2))
                     }
                 }
             )
@@ -202,10 +198,10 @@ class MediaPaneBuilder(
             dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
                 while (change.next()) {
                     if (change.wasRemoved() && change.removed.contains(media)) {
-                        imageView.effect = null
+                        box.effect = null
                     }
                     if (change.wasAdded() && change.addedSubList.contains(media)) {
-                        imageView.effect = Blend().also { blend ->
+                        box.effect = Blend().also { blend ->
                             blend.mode = BlendMode.MULTIPLY
                             blend.bottomInput = ColorInput().also { select ->
                                 select.paint = Color.rgb(125, 125, 255)
