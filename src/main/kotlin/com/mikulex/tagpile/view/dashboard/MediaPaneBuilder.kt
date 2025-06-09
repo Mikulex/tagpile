@@ -7,7 +7,6 @@ import com.mikulex.tagpile.viewmodel.MediaViewModelFactory
 import javafx.beans.binding.Bindings
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
-import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.geometry.Orientation
 import javafx.geometry.Pos
@@ -18,13 +17,9 @@ import javafx.scene.control.TextInputDialog
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
-import javafx.scene.effect.ImageInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.*
-import javafx.scene.layout.Background
-import javafx.scene.layout.ColumnConstraints
-import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
@@ -37,8 +32,7 @@ import javafx.util.Builder
 import org.slf4j.LoggerFactory
 
 class MediaPaneBuilder(
-    private val dashboardViewModel: DashBoardViewModel,
-    private val mediaViewModelFactory: MediaViewModelFactory
+    private val dashboardViewModel: DashBoardViewModel, private val mediaViewModelFactory: MediaViewModelFactory
 ) : Builder<Region> {
     companion object {
         private val LOG = LoggerFactory.getLogger(MediaPaneBuilder::class.java)
@@ -105,12 +99,11 @@ class MediaPaneBuilder(
                         } else if (event.code == KeyCode.C && event.isControlDown) {
                             if (dashboardViewModel.selectedMedias.size == 1) {
                                 LOG.debug("Copying Media to Clipboard")
-                                dashboardViewModel.selectedMedias.first().url?.toUri()?.toString()
-                                    ?.let {
-                                        Clipboard.getSystemClipboard().setContent(ClipboardContent().apply {
-                                            putImage(Image(it))
-                                        })
-                                    }
+                                dashboardViewModel.selectedMedias.first().url?.toUri()?.toString()?.let {
+                                    Clipboard.getSystemClipboard().setContent(ClipboardContent().apply {
+                                        putImage(Image(it))
+                                    })
+                                }
                             }
                         } else if (event.code == KeyCode.T) {
                             TextInputDialog().apply {
@@ -181,19 +174,17 @@ class MediaPaneBuilder(
             imageView.isPickOnBounds = true
             imageView.isPreserveRatio = true
 
-            Thread.startVirtualThread(
-                object : Task<Image>() {
-                    override fun call(): Image {
-                        return Image(media.url?.toUri().toString(), 200.0, 200.0, true, true)
-                    }
-                }.apply {
-                    setOnSucceeded {
-                        imageView.image = this.value
-                        imageView.fitWidthProperty().bind(box.widthProperty().multiply(0.9))
-                        imageView.fitHeightProperty().bind(box.heightProperty().multiply(0.9))
-                    }
+            Thread.startVirtualThread(object : Task<Image>() {
+                override fun call(): Image {
+                    return Image(media.url?.toUri().toString(), 200.0, 200.0, true, true)
                 }
-            )
+            }.apply {
+                setOnSucceeded {
+                    imageView.image = this.value
+                    imageView.fitWidthProperty().bind(box.widthProperty().multiply(0.9))
+                    imageView.fitHeightProperty().bind(box.heightProperty().multiply(0.9))
+                }
+            })
 
             dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
                 while (change.next()) {
