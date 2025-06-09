@@ -8,7 +8,9 @@ import javafx.beans.binding.Bindings
 import javafx.collections.ListChangeListener
 import javafx.concurrent.Task
 import javafx.event.EventHandler
+import javafx.geometry.Insets
 import javafx.geometry.Orientation
+import javafx.geometry.Pos
 import javafx.scene.Scene
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.SplitPane
@@ -16,9 +18,14 @@ import javafx.scene.control.TextInputDialog
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
+import javafx.scene.effect.ImageInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.*
+import javafx.scene.layout.Background
+import javafx.scene.layout.ColumnConstraints
+import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Region
 import javafx.scene.layout.StackPane
 import javafx.scene.layout.TilePane
@@ -56,9 +63,14 @@ class MediaPaneBuilder(
             isFitToWidth = true
 
             content = TilePane().apply {
-                prefColumns = 8
-                hgap = 10.0
-                vgap = 10.0
+                hgap = 20.0
+                vgap = 20.0
+
+                tileAlignment = Pos.CENTER
+                padding = Insets(30.0)
+
+                prefTileWidthProperty().bind(Bindings.multiply(250.0, dashboardViewModel.zoomLevel))
+                prefTileHeightProperty().bind(Bindings.multiply(250.0, dashboardViewModel.zoomLevel))
 
                 dashboardViewModel.results.addListener(ListChangeListener { change ->
                     while (change.next()) {
@@ -161,67 +173,79 @@ class MediaPaneBuilder(
         LOG.info("Finished tile pane initialization")
     }
 
-    private fun createTile(media: MediaDTO) = ImageView().apply {
-        image = null
-        isPreserveRatio = true
-        userData = media
-        isPickOnBounds = true
-        val fitWidth = 200.0
-        fitWidthProperty().bind(Bindings.multiply(fitWidth,dashboardViewModel.zoomLevel))
-        Thread.startVirtualThread(
-            object : Task<Image>() {
-                override fun call(): Image {
-                    return Image(media.url?.toUri().toString(), 200.0, 0.0, true, true)
-                }
-            }.apply {
-                setOnSucceeded {
-                    image = this.value
-                }
-            }
-        )
+    private fun createTile(media: MediaDTO) = HBox().also { box ->
+        box.alignment = Pos.CENTER
+        box.children += ImageView().also { imageView ->
+            imageView.image = null
+            imageView.userData = media
+            imageView.isPickOnBounds = true
+            imageView.isPreserveRatio = true
 
-        dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
-            while (change.next()) {
-                if (change.wasRemoved() && change.removed.contains(media)) {
-                    effect = null
-                }
-                if (change.wasAdded() && change.addedSubList.contains(media)) {
-                    effect = Blend().apply {
-                        mode = BlendMode.MULTIPLY
-                        bottomInput = ColorInput(0.0, 0.0, image.width, image.height, Color.rgb(125, 125, 255))
+            Thread.startVirtualThread(
+                object : Task<Image>() {
+                    override fun call(): Image {
+                        return Image(media.url?.toUri().toString(), 200.0, 200.0, true, true)
+                    }
+                }.apply {
+                    setOnSucceeded {
+                        imageView.image = this.value
+                        imageView.fitWidthProperty().bind(box.widthProperty().multiply(0.9))
+                        imageView.fitHeightProperty().bind(box.heightProperty().multiply(0.9))
+                        imageView.xProperty()
+                            .bind(Bindings.subtract(box.widthProperty(), imageView.prefWidth(-1.0)).divide(2))
+                        imageView.yProperty()
+                            .bind(Bindings.subtract(box.heightProperty(), imageView.prefHeight(-1.0)).divide(2))
                     }
                 }
-            }
-        })
+            )
 
-        this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
-            event.consume()
-
-            if (!event.isShiftDown && !event.isControlDown) {
-                dashboardViewModel.setLastSelectedMedia(media)
-                dashboardViewModel.selectedMedias.setAll(listOf(media))
-            } else if (event.isControlDown && event.isShiftDown) {
-                dashboardViewModel.selectTo(media, false)
-            } else if (event.isControlDown && !event.isShiftDown) {
-                dashboardViewModel.setLastSelectedMedia(media)
-                if (dashboardViewModel.selectedMedias.contains(media)) {
-                    dashboardViewModel.selectedMedias.remove(media)
-                } else {
-                    dashboardViewModel.selectedMedias.add(media)
+            dashboardViewModel.selectedMedias.addListener(ListChangeListener { change ->
+                while (change.next()) {
+                    if (change.wasRemoved() && change.removed.contains(media)) {
+                        imageView.effect = null
+                    }
+                    if (change.wasAdded() && change.addedSubList.contains(media)) {
+                        imageView.effect = Blend().also { blend ->
+                            blend.mode = BlendMode.MULTIPLY
+                            blend.bottomInput = ColorInput().also { select ->
+                                select.paint = Color.rgb(125, 125, 255)
+                                select.widthProperty().bind(box.widthProperty())
+                                select.heightProperty().bind(box.heightProperty())
+                            }
+                        }
+                    }
                 }
-            } else if (!event.isControlDown && event.isShiftDown) {
-                dashboardViewModel.selectTo(media, true)
-            }
-        }
+            })
 
-        this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
-            if (event.clickCount == 2) {
-                with(Stage()) {
-                    val imageViewModel =
-                        mediaViewModelFactory.create().apply { mediaFile.set(media) }.also { it.findTags() }
-                    this.title = "${media.url.toString()} - tagpile"
-                    this.scene = Scene(MediaViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
-                    this.show()
+            imageView.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
+                event.consume()
+
+                if (!event.isShiftDown && !event.isControlDown) {
+                    dashboardViewModel.setLastSelectedMedia(media)
+                    dashboardViewModel.selectedMedias.setAll(listOf(media))
+                } else if (event.isControlDown && event.isShiftDown) {
+                    dashboardViewModel.selectTo(media, false)
+                } else if (event.isControlDown && !event.isShiftDown) {
+                    dashboardViewModel.setLastSelectedMedia(media)
+                    if (dashboardViewModel.selectedMedias.contains(media)) {
+                        dashboardViewModel.selectedMedias.remove(media)
+                    } else {
+                        dashboardViewModel.selectedMedias.add(media)
+                    }
+                } else if (!event.isControlDown && event.isShiftDown) {
+                    dashboardViewModel.selectTo(media, true)
+                }
+            }
+
+            imageView.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
+                if (event.clickCount == 2) {
+                    with(Stage()) {
+                        val imageViewModel =
+                            mediaViewModelFactory.create().apply { mediaFile.set(media) }.also { it.findTags() }
+                        this.title = "${media.url.toString()} - tagpile"
+                        this.scene = Scene(MediaViewerBuilder(imageViewModel).build(), 1920.0, 1080.0)
+                        this.show()
+                    }
                 }
             }
         }
