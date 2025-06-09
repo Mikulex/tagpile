@@ -45,9 +45,6 @@ class MediaPaneBuilder(
         )
         dashboardViewModel.metadataWithProperty.bind(this.widthProperty().multiply(0.30))
 
-        this.dividers[0].positionProperty().addListener { _, _, newVal ->
-            println(newVal)
-        }
         orientation = Orientation.HORIZONTAL
     }
 
@@ -55,6 +52,9 @@ class MediaPaneBuilder(
         LOG.info("Initializing tile pane")
 
         stack.children += ScrollPane().apply {
+            hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
+            isFitToWidth = true
+
             content = TilePane().apply {
                 prefColumns = 8
                 hgap = 10.0
@@ -166,11 +166,12 @@ class MediaPaneBuilder(
         isPreserveRatio = true
         userData = media
         isPickOnBounds = true
-
+        val fitWidth = 200.0
+        fitWidthProperty().bind(Bindings.multiply(fitWidth,dashboardViewModel.zoomLevel))
         Thread.startVirtualThread(
             object : Task<Image>() {
                 override fun call(): Image {
-                    return Image(media.url?.toUri().toString(), 150.0, 0.0, true, true)
+                    return Image(media.url?.toUri().toString(), 200.0, 0.0, true, true)
                 }
             }.apply {
                 setOnSucceeded {
@@ -192,7 +193,6 @@ class MediaPaneBuilder(
                 }
             }
         })
-
 
         this.addEventHandler(MouseEvent.MOUSE_CLICKED) { event ->
             event.consume()

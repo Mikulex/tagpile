@@ -17,11 +17,13 @@ import kotlin.math.min
 
 class DashBoardViewModel(private val mediaModel: MediaModel) {
     private val LOG = LoggerFactory.getLogger(MediaModel::class.java)
+    private val lastSelectedIndex: IntegerProperty = SimpleIntegerProperty(0)
+
+    val zoomLevel: DoubleProperty = SimpleDoubleProperty(0.5)
     val searchQuery: StringProperty = SimpleStringProperty()
     val results: ObservableList<MediaDTO> = FXCollections.observableArrayList()
     val resultTags: ObservableList<String> = FXCollections.observableArrayList()
     val selectedMedias: ObservableList<MediaDTO> = FXCollections.observableArrayList()
-    private val lastSelectedIndex: IntegerProperty = SimpleIntegerProperty(0)
     val imageWidthProperty: DoubleProperty = SimpleDoubleProperty(300.0)
     val metadataWithProperty: DoubleProperty = SimpleDoubleProperty(300.0)
 
