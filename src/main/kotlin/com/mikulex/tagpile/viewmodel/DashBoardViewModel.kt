@@ -25,7 +25,7 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
     val resultTags: ObservableList<String> = FXCollections.observableArrayList()
     val selectedMedias: ObservableList<MediaDTO> = FXCollections.observableArrayList()
     val imageWidthProperty: DoubleProperty = SimpleDoubleProperty(300.0)
-    val metadataWithProperty: DoubleProperty = SimpleDoubleProperty(300.0)
+    val metadataMaxWidthProperty: DoubleProperty = SimpleDoubleProperty(300.0)
 
     fun importFiles(file: List<File>) {
         file.map { it.toURI().toString() }.forEach { it -> mediaModel.importFile(it) }
@@ -94,8 +94,6 @@ class DashBoardViewModel(private val mediaModel: MediaModel) {
 
             val addSuccess = mediaModel.addTagsToMedia(media.pk, tagsToAdd)
             media.tags = tagsToAdd
-
-
         }
     }
 }

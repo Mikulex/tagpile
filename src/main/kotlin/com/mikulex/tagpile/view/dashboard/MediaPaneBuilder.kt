@@ -39,12 +39,13 @@ class MediaPaneBuilder(
     }
 
     override fun build() = SplitPane().apply {
-        items += createTiles()
-        items += MetadataBarBuilder(dashboardViewModel).build()
+        items += createTiles().also { SplitPane.setResizableWithParent(it, false) }
+        items += MetadataBarBuilder(dashboardViewModel).build().also { SplitPane.setResizableWithParent(it, true) }
+
         dashboardViewModel.imageWidthProperty.bind(
             Bindings.subtract(1, this.dividers[0].positionProperty()).multiply(this.widthProperty()).subtract(20)
         )
-        dashboardViewModel.metadataWithProperty.bind(this.widthProperty().multiply(0.30))
+        dashboardViewModel.metadataMaxWidthProperty.bind(this.widthProperty().multiply(0.7))
 
         orientation = Orientation.HORIZONTAL
     }

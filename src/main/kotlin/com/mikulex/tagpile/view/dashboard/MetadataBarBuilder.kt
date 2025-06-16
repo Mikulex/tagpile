@@ -1,7 +1,6 @@
 package com.mikulex.tagpile.view.dashboard
 
 import com.mikulex.tagpile.viewmodel.DashBoardViewModel
-import javafx.beans.binding.Bindings
 import javafx.collections.ListChangeListener
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
@@ -16,7 +15,8 @@ class MetadataBarBuilder(private val dashboardViewModel: DashBoardViewModel) : B
             fitWidthProperty().bind(dashboardViewModel.imageWidthProperty)
             isPreserveRatio = true
         }
-        outer.maxWidthProperty().bind(dashboardViewModel.metadataWithProperty)
+        outer.maxWidthProperty().bind(dashboardViewModel.metadataMaxWidthProperty)
+        outer.minWidth = 200.0
 
         outer.children += previewImageView
 
