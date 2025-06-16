@@ -71,7 +71,8 @@ class MediaPaneBuilder(
                     while (change.next()) {
                         if (change.wasRemoved()) {
                             change.removed.forEach { r ->
-                                children.removeIf { it.userData == r }
+                                // TODO: ugh, tile as hbox is ugly
+                                children.removeIf { box -> (box as HBox).children[0].userData == r }
                             }
                         }
 
